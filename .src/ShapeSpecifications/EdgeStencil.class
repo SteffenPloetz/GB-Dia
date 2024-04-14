@@ -7,7 +7,7 @@
 ''' It is planned to replace it with a file-based stencil set, that enables easy extension of the edge stencil set.
 
 ' ###############################################
-' BEGIN Shape stencil functionality
+' BEGIN Edge stencil functionality
 ' ###############################################
 
 ' -----------------------------------------------
@@ -28,3 +28,99 @@ Static Public Const DefaultFontSize As Float = 12
 
 '' This constant defines the default font face for tect attributes.
 Static Public Const DefaultFontFace As String = "Cantarell"
+
+
+'' This property gets the unique type name of this shape stencil.
+Property Read StencilName As String
+
+
+'' Private - no description.
+Private $sStencilName As String
+
+
+'' Constructs a new edge stencil.
+Public Sub _new(sStencilName As String)
+  $sStencilName = sStencilName
+End
+
+'' Destructs the (actual) edge stencil.
+Public Sub _free()
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function StencilName_Read() As String
+  Return $sStencilName
+End
+
+' -----------------------------------------------
+' End Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN Edge stencil functionality
+' ###############################################
+
+' ###############################################
+' BEGIN Shape stencil provider functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Checks whether the indicated stencil-name is known.
+''
+'' The **stencilName** argument defines the stencil-name to check.
+Static Public Function HasStencil(stencilName As String) As Boolean
+  Select Case stencilName
+    Case SequenceFlow
+      Return True
+    Case MessageFlow
+      Return True
+  End Select
+
+  Return False
+End
+
+'' Creates the indicated edge stencil.
+''
+'' The **sStencilName** argument defines the stencil-name of the requested shape stencil.
+Static Public Function GetStencil(sStencilName As String) As EdgeStencil
+  Select Case sStencilName
+    Case SequenceFlow
+      Return CreateSequenceFlow()
+    Case Task
+      Return CreateMessageFlow()
+  End Select
+
+  Return Null
+End
+
+'' Private - no description.
+Static Private Function CreateSequenceFlow() As EdgeStencil
+  Dim result As EdgeStencil = New EdgeStencil(SequenceFlow)
+  Return result
+End
+
+'' Private - no description.
+Static Private Function CreateMessageFlow() As EdgeStencil
+  Dim result As EdgeStencil = New EdgeStencil(MessageFlow)
+  Return result
+End
+

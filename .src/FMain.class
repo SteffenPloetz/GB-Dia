@@ -189,7 +189,7 @@ Private Sub CtrlPictureBox$Initialize()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
 
   Dim aPointsA As PointF[] = FlowEdge.ToPointArray2(fCurrentX + ShapeStencil.TinyShapeSize.X, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + ShapeStencil.TinyShapeSize.X + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
-  Dim oEdge As FlowEdge = New FlowEdge(aPointsA)
+  Dim oEdge As FlowEdge = New FlowEdge(aPointsA, EdgeStencil.SequenceFlow)
   oEdge.SetNameBoundsToEditorBestBounds()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
   fCurrentX = fCurrentX + ShapeStencil.TinyShapeSize.X + fNextShapeOffset + ShapeStencil.DefaultShapeSize.X
@@ -201,7 +201,7 @@ Private Sub CtrlPictureBox$Initialize()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
 
   Dim aPointsB As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
-  oEdge = New FlowEdge(aPointsB)
+  oEdge = New FlowEdge(aPointsB, EdgeStencil.SequenceFlow)
   oEdge.SetNameBoundsToEditorBestBounds()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
   fCurrentX = fCurrentX + ShapeStencil.SmallShapeSize.X + fNextShapeOffset
@@ -213,7 +213,7 @@ Private Sub CtrlPictureBox$Initialize()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
 
   Dim aPointsC As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
-  oEdge = New FlowEdge(aPointsC)
+  oEdge = New FlowEdge(aPointsC, EdgeStencil.SequenceFlow)
   oEdge.Name = "good"
   oEdge.SetNameBoundsToEditorBestBounds()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
@@ -224,7 +224,7 @@ Private Sub CtrlPictureBox$Initialize()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
 
   Dim aPointsD As PointF[] = FlowEdge.ToPointArray3(fCurrentX - ShapeStencil.SmallShapeSize.X / 2, fTopOffsetY + fDefaultToCenterOffsetY + ShapeStencil.SmallShapeSize.Y / 2, fCurrentX - ShapeStencil.SmallShapeSize.X / 2, 100 - ShapeStencil.SmallShapeSize.Y / 2 + fTopOffsetY + fDefaultToCenterOffsetY + ShapeStencil.SmallShapeSize.Y / 2, fCurrentX + fNextShapeOffset + fDefaultToTinyOffsetX, 100 + fTopOffsetY + fDefaultToCenterOffsetY)
-  oEdge = New FlowEdge(aPointsD)
+  oEdge = New FlowEdge(aPointsD, EdgeStencil.SequenceFlow)
   oEdge.Name = "bad"
   oEdge.SetNameBoundsToEditorBestBounds()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
@@ -237,7 +237,7 @@ Private Sub CtrlPictureBox$Initialize()
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
 
    Dim aPointsE As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
-  oEdge = New FlowEdge(aPointsE)
+  oEdge = New FlowEdge(aPointsE, EdgeStencil.SequenceFlow)
   $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
 End
 
@@ -343,7 +343,7 @@ Public Sub crtlInPlaceTextArea_LostFocus()
       oAction.ApplyTo = oShape
 
       Cairo.Begin(ctrlPictureBox.Image)
-      Dim oOldNameSizeForShape As PointF = CairoHelper.TextExtents(oShape.Name, oShape.Stencil.DefaultFontFace, oShape.Stencil.DefaultFontSize)
+      'Dim oOldNameSizeForShape As PointF = CairoHelper.TextExtents(oShape.Name, oShape.Stencil.DefaultFontFace, oShape.Stencil.DefaultFontSize)
       Dim oNewNameSizeForShape As PointF = CairoHelper.TextExtents(crtlInPlaceTextArea.Text, oShape.Stencil.DefaultFontFace, oShape.Stencil.DefaultFontSize)
       Cairo.End()
 
@@ -355,9 +355,9 @@ Public Sub crtlInPlaceTextArea_LostFocus()
         oEditorBestBoundsForShape.Y = oShape.NameBounds.Y
       Endif
       ' Horizontal alignment: Keep offset.
-      Dim newOffsetShapeX As Float = oEditorBestBoundsForShape.X + oEditorBestBoundsForShape.W / 2
-      Dim oldOffsetShapeX As Float = oShape.NameBounds.X + oShape.NameBounds.W / 2
-      oEditorBestBoundsForShape.X = oEditorBestBoundsForShape.X + oldOffsetShapeX - newOffsetShapeX
+      Dim fNewOffsetShapeX As Float = oEditorBestBoundsForShape.X + oEditorBestBoundsForShape.W / 2
+      Dim fOldOffsetShapeX As Float = oShape.NameBounds.X + oShape.NameBounds.W / 2
+      oEditorBestBoundsForShape.X = oEditorBestBoundsForShape.X + fOldOffsetShapeX - fNewOffsetShapeX
       ' Size: We provide full width and required height.
       oEditorBestBoundsForShape.Height = oNewNameSizeForShape.Y
 
@@ -372,17 +372,17 @@ Public Sub crtlInPlaceTextArea_LostFocus()
       oAction.ApplyTo = oEdge
 
       Cairo.Begin(ctrlPictureBox.Image)
-      Dim oOldSizeForEdge As PointF = CairoHelper.TextExtents(oEdge.Name, oShape.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
-      Dim oNewSizeForEdge As PointF = CairoHelper.TextExtents(crtlInPlaceTextArea.Text, oShape.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
+      'Dim oOldNameSizeForEdge As PointF = CairoHelper.TextExtents(oEdge.Name, oEdge.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
+      Dim oNewNameSizeForEdge As PointF = CairoHelper.TextExtents(crtlInPlaceTextArea.Text, oEdge.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
       Cairo.End()
 
       ' Verticall alignment: Top stays unchanged.
       ' Horizontal alignment: Keep offset.
-      Dim newOffsetEdgeX As Float = oNewBoundsForEdge.X + oNewBoundsForEdge.W / 2
-      Dim oldOffsetEdgeX As Float = oEdge.NameBounds.X + oEdge.NameBounds.W / 2
-      oNewBoundsForEdge.X = oNewBoundsForEdge.X + oldOffsetEdgeX - newOffsetEdgeX
+      Dim fNewOffsetEdgeX As Float = oNewBoundsForEdge.X + oNewBoundsForEdge.W / 2
+      Dim fOldOffsetEdgeX As Float = oEdge.NameBounds.X + oEdge.NameBounds.W / 2
+      oNewBoundsForEdge.X = oNewBoundsForEdge.X + fOldOffsetEdgeX - fNewOffsetEdgeX
       ' Size: We provide full width and required height.
-      oNewBoundsForEdge.Height = oNewSizeForEdge.Y
+      oNewBoundsForEdge.Height = oNewNameSizeForEdge.Y
 
       oAction.NewBounds = oNewBoundsForEdge
       oAction.NewText = crtlInPlaceTextArea.Text

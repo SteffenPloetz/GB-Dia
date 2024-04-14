@@ -62,6 +62,12 @@ Private $oNode As ModelNode
 ' Store the bounding box of the name.
 Private $oLabel As ElementLabel
 
+'' Constructs a new flow edge.
+'
+'' The **fX** and **fY** define the top left corner coordinates of the bounding box.
+'' The **fDefaultW** and **fDefaultH** define the size of the bounding box.
+'' The **sStencilName** defines the name of the edge stencil to assign.
+'' The **fWidthStretch** and **fHeightStretch** define the size stretch.
 Public Sub _new(fX As Float, fY As Float, fDefaultW As Float, fDefaultH As Float, sStencilName As String, Optional fWidthStretch As Float = 1.0, Optional fHeightStretch As Float = 1.0)
   $aPosition = PointF(fX, fY)
   $aStretch = PointF(fWidthStretch, fHeightStretch)
