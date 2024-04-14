@@ -19,6 +19,12 @@ Property Read Points As PointF[]
 '' Gets the bounding box of this diagram element. Override base class property.
 Property Read Bounds As RectF
 
+'' Gets the stencil associated to this this symbol.
+Property Read Stencil As EdgeStencil
+
+'' Gets the stencil identity of the stencil associated to this symbol.
+Property Read StencilName As String
+
 '' Gets or sets the invisible part of a model.
 Property Sequence As ModelSequence
 
@@ -35,6 +41,12 @@ Property Read NameBoundsToEditorBestBounds As RectF
 ' Store the interpolation points.
 Private $aPoints As PointF[]
 
+' Store the associated stencil.
+Private $oStencil As EdgeStencil
+
+' Store the identity of the stencil associated to this shape. It must match to any available stencil, to associate a stencil to this shape.
+Private $sStencilName As String
+
 ' Store the associated model layer.
 Private $oSequence As ModelSequence
 
@@ -46,8 +58,20 @@ Private $oLabel As ElementLabel
 '
 '' The **x0Value** and **x0Value** define the first interpolation point.
 '' The **x1Value** and **x1Value** define the last interpolation point.
-Public Sub _new(wayPoints As PointF[])
+'' The **sStencilName** defines the name of the edge stencil to assign.
+Public Sub _new(wayPoints As PointF[], sStencilName As String)
   $aPoints = wayPoints
+  $sStencilName = sStencilName
+
+  If EdgeStencil.HasStencil(sStencilName) = False Then
+      Dim sError As String = "FlowEdge.New() - No stencil found for '" & sStencilName & "'."
+      If FMain.Debug Then
+        Message.Error(sError)
+      Else
+        Logger.LogToFile("Error", "Touring Machine", sError)
+      Endif
+  End If
+  $oStencil = EdgeStencil.GetStencil(sStencilName)
 
   $oSequence = New ModelSequence
   $oLabel = New ElementLabel
@@ -56,7 +80,9 @@ End
 
 '' Destructs the (actual) flow edge.
 Public Sub _free()
-  Clear()
+  If $oSequence <> Null Then
+    Clear()
+  Endif
 
   $oSequence = Null
 End
@@ -103,6 +129,16 @@ Private Function Bounds_Read() As RectF
   Endif
 
   Return New RectF(fMinX, fMinY, fMaxX, fMaxY)
+End
+
+'' Private - no description.
+Private Function Stencil_Read() As EdgeStencil
+  Return $oStencil
+End
+
+'' Private - no description.
+Private Function StencilName_Read() As String
+  Return $sStencilName
 End
 
 '' Private - no description.
@@ -272,7 +308,7 @@ Public Function HilightedRenderingInstructions(bDirty As Boolean) As RenderingIn
   Else If $aPoints.Length = 2 Then
     aRenderingPrimitives[2] = RenderingInstruction.CreateStrait($aPoints[0].X, $aPoints[0].Y, $aPoints[1].X, $aPoints[1].Y)
   Else
-    aRenderingPrimitives[2] = RenderingInstruction.CreatePolygon($aPoints)
+    aRenderingPrimitives[2] = RenderingInstruction.CreatePolygon($aPoints, False)
   End If
 
   Return aRenderingPrimitives

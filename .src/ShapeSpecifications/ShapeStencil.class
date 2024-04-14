@@ -60,6 +60,7 @@ Property Read StencilName As String
 '' This property gets the default size of the bounding box for this shape stencil.
 Property DefaultSize As PointF
 
+
 '' Private - no description.
 Private $aStyleables As Styleable[]
 

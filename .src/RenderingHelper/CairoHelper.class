@@ -80,13 +80,13 @@ End
 '' Calculates the text extents. Multi line text is supported.
 ''
 '' The **sText** argument defines the text to calculate the extents for.
-'' The **oFontName** argument defines font name of the font tu use for measuring.
+'' The **sFontName** argument defines font name of the font tu use for measuring.
 '' The **fFontSize** argument defines font size of the font tu use for measuring.
 '' The **fScale** argument defines the scale to apply to the extents for.
 '' Returns: The text extents.
 '' Remarks: The line height is font ascent + font descent, not font size! Typically the line height is greater than the font size.
 '' Remarks: For some fonts approximately a quater font size, for some other fonts even more, up to approximately the half font size.
-Static Public Function TextExtents(sText As String, oFontName As String, fFontSize As Float, Optional fScale As Float = 1.0) As PointF
+Static Public Function TextExtents(sText As String, sFontName As String, fFontSize As Float, Optional fScale As Float = 1.0) As PointF
   Dim oSize As PointF = PointF(0, 0)
   Dim oTextExtents As CairoTextExtents
 
@@ -94,10 +94,10 @@ Static Public Function TextExtents(sText As String, oFontName As String, fFontSi
   If Replace(sText, " ", "").Len = 0 Then Return oSize
 
   Dim sTextLines As String[]
-  Dim oOldFontName As String = Cairo.Font.Name
+  Dim sOldFontName As String = Cairo.Font.Name
   Dim fOldFontSize As Float = Cairo.Font.Size
 
-  If oFontName <> oOldFontName Then Cairo.Font.Name = oFontName
+  If sFontName <> sOldFontName Then Cairo.Font.Name = sFontName
   If fFontSize <> fOldFontSize Then Cairo.Font.Size = fFontSize
 
   Dim fLineHeight As Float = Cairo.Font.Extents.Ascent + Cairo.Font.Extents.Descent
@@ -118,7 +118,7 @@ Static Public Function TextExtents(sText As String, oFontName As String, fFontSi
     Endif
   Next
 
-  If oFontName <> oOldFontName Then Cairo.Font.Name = oOldFontName
+  If sFontName <> sOldFontName Then Cairo.Font.Name = sOldFontName
   If fFontSize <> fOldFontSize Then Cairo.Font.Size = fOldFontSize
 
   Return oSize

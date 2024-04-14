@@ -226,7 +226,7 @@ Static Private Function ReadBPMNPlane(oFlowDiagram As FlowDiagram, aFlowProcesse
             sResultMessages &= "            Plane child element type '" & oChild.Name & "' \n" & sWaypointsAndLabelResultMessages
           Endif
 
-          oEdgeNode = New FlowEdge(aWayPoints)
+          oEdgeNode = New FlowEdge(aWayPoints, EdgeStencil.SequenceFlow)
           oFlowDiagram.DiagramElements.Push(oEdgeNode)
           oEdgeNode.Sequence = oRefNode
           If aEdgeLabelBounds.X = aEdgeLabelBounds.Y And If aEdgeLabelBounds.Y = aEdgeLabelBounds.W And If aEdgeLabelBounds.W = aEdgeLabelBounds.H Then
