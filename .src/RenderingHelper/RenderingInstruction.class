@@ -1,0 +1,341 @@
+' Gambas class file
+
+''' This class represents primitive rendering instructions for a trurtle-graphic alike rendering engine.
+''' These rendering instructions can be concatinated to a display list.
+''' A display list is made to support fast rendering (as less calculations as possible) on multiple backends (image, SVG, PDF, ...).
+
+' ###############################################
+' BEGIN Rendering instruction functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This constant identifies the type of the rendering primitive that moves the pen to the indicated position.
+Public Const MoveTo As Integer = 1
+
+'' This constant identifies the type of the rendering primitive that draws a line from the corrent position to the indicated position.
+Public Const LineTo As Integer = 2
+
+'' This constant identifies the type of the rendering primitive that draws a line from the indicated start position to the indicated end position.
+Public Const Strait As Integer = 3
+
+'' This constant identifies the type of the rendering primitive that draws a outlines circle.
+Public Const Circle As Integer = 4
+
+'' This constant identifies the type of the rendering primitive that draws a outlines rectangle with or without rounded corners.
+Public Const RoundedRectangle As Integer = 5
+
+'' This constant identifies the type of the rendering primitive that draws a outlines polygon.
+Public Const Polygon As Integer = 6
+
+'' This constant identifies the type of the rendering primitive that sets the stroke width.
+Public Const StrokeWidth As Integer = 10
+
+'' This constant identifies the type of the rendering primitive that sets the next color.
+Public Const SolidColor As Integer = 11
+
+'' This constant identifies the type of the rendering primitive that sets the next font.
+Public Const Font As Integer = 12
+
+'' This constant identifies the type of the rendering primitive that draws a text line.
+Public Const TextLine As Integer = 13
+
+
+'' This field gets or sets the type of the rendering primitive.
+Public InstructionType As Integer
+
+'' This field gets or sets the color value of the rendering primitive.
+Public ColorValue As Integer
+
+'' This field gets or sets whether to close a figure path.
+Public ClosePath As Boolean
+
+'' This field gets or sets whether to draw a figure as stroke or as fill.
+Public FillFigure As Boolean
+
+'' This field gets or sets a text.
+Public Text As String
+
+'' Private - no description.
+Private $aCoordinates As Float[]
+
+'' Private - no description.
+Private $sText As String
+
+'' Constructs a new rendering instruction.
+''
+'' The **iCount** defines the number of values.
+Public Sub _new(iCount As Integer)
+  $aCoordinates = New Float[iCount]
+  $sText = Null
+End
+
+'' Destructs the (actual) rendering instruction.
+Public Sub _free()
+  $aCoordinates = Null
+  $sText = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Creates a rendering primitive that repersents a cursor move-to.
+''
+'' The **x** and **y** define the end point of the line.
+Static Public Function CreateMoveTo(x As Float, y As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(2)
+
+  oRenderingInstruction.InstructionType = MoveTo
+  oRenderingInstruction.SetCoordinate(0, x)
+  oRenderingInstruction.SetCoordinate(1, y)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a line-to.
+''
+'' The **fX** and **fY** define the end point of the line.
+Static Public Function CreateLineTo(fX As Float, fY As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(2)
+
+  oRenderingInstruction.InstructionType = LineTo
+  oRenderingInstruction.SetCoordinate(0, fX)
+  oRenderingInstruction.SetCoordinate(1, fY)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a line-from-to.
+''
+'' The **fX0** and **fY0** define the start point of the line.
+'' The **fX1** and **fY1** define the end point of the line.
+Static Public Function CreateStrait(fX0 As Float, fY0 As Float, fX1 As Float, fY1 As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(4)
+
+  oRenderingInstruction.InstructionType = Strait
+  oRenderingInstruction.SetCoordinate(0, fX0)
+  oRenderingInstruction.SetCoordinate(1, fY0)
+  oRenderingInstruction.SetCoordinate(2, fX1)
+  oRenderingInstruction.SetCoordinate(3, fY1)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents an outlined circle.
+''
+'' The **fCX** and **fCY** define the center point of the circle.
+'' The **fR** defines the radius.
+Static Public Function CreateCircle(fCX As Float, fCY As Float, fR As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(3)
+
+  oRenderingInstruction.InstructionType = Circle
+  oRenderingInstruction.SetCoordinate(0, fCX)
+  oRenderingInstruction.SetCoordinate(1, fCY)
+  oRenderingInstruction.SetCoordinate(2, fR)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents an outlined rectangle, with or without rounded corners.
+''
+'' The **fX** and **fY** define the upper left corner of the bounding box.
+'' The **fWidth** and **fHeight** define the width and height of the bounding box.
+'' The **fR** defines the radius. It can be 0.0 for sharp corners.
+Static Public Function CreateRoundedRectangle(fX As Float, fY As Float, fWidth As Float, fHeight As Float, fR As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(5)
+
+  oRenderingInstruction.InstructionType = RoundedRectangle
+  oRenderingInstruction.SetCoordinate(0, fX)
+  oRenderingInstruction.SetCoordinate(1, fY)
+  oRenderingInstruction.SetCoordinate(2, fWidth)
+  oRenderingInstruction.SetCoordinate(3, fHeight)
+  oRenderingInstruction.SetCoordinate(4, fR)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a cursor move-to.
+''
+'' The **aPoints** defines the array of interpolation point.
+Static Public Function CreatePolygon(aPoints As PointF[], Optional bClose As Boolean = True, Optional bFill As Boolean = False) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(aPoints.Length * 2)
+
+  oRenderingInstruction.InstructionType = Polygon
+  For iIndex As Integer = 0 To aPoints.Length - 1
+    oRenderingInstruction.SetCoordinate(2 * iIndex + 0, aPoints[iIndex].X)
+    oRenderingInstruction.SetCoordinate(2 * iIndex + 1, aPoints[iIndex].Y)
+  Next
+
+  oRenderingInstruction.ClosePath = bClose
+  oRenderingInstruction.FillFigure = bFill
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents an arrow head.
+''
+'' The **aPoints** defines the array of interpolation point.
+Static Public Function CreateArrowHead(oPoint0 As PointF, oPoint1 As PointF, Optional bClose As Boolean = True, Optional bFill As Boolean = False) As RenderingInstruction
+  Dim aPoints As PointF[] = New PointF[3]
+
+  If oPoint0.Y = oPoint1.Y Then
+    If oPoint0.X < oPoint1.X Then
+      aPoints[0] = PointF(oPoint1.X, oPoint1.Y)
+      aPoints[1] = PointF(oPoint1.X - 5, oPoint1.Y + 5)
+      aPoints[2] = PointF(oPoint1.X - 5, oPoint1.Y - 5)
+    Else
+      aPoints[0] = PointF(oPoint1.X, oPoint1.Y)
+      aPoints[1] = PointF(oPoint1.X + 5, oPoint1.Y + 5)
+      aPoints[2] = PointF(oPoint1.X + 5, oPoint1.Y - 5)
+    Endif
+  Else
+    If oPoint0.Y < oPoint1.Y Then
+      aPoints[0] = PointF(oPoint1.X, oPoint1.Y)
+      aPoints[1] = PointF(oPoint1.X - 5, oPoint1.Y - 5)
+      aPoints[2] = PointF(oPoint1.X + 5, oPoint1.Y - 5)
+    Else
+      aPoints[0] = PointF(oPoint1.X, oPoint1.Y)
+      aPoints[1] = PointF(oPoint1.X - 5, oPoint1.Y + 5)
+      aPoints[2] = PointF(oPoint1.X + 5, oPoint1.Y + 5)
+    Endif
+  Endif
+
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(aPoints.Length * 2)
+
+  oRenderingInstruction.InstructionType = Polygon
+  For iIndex As Integer = 0 To aPoints.Length - 1
+    oRenderingInstruction.SetCoordinate(2 * iIndex + 0, aPoints[iIndex].X)
+    oRenderingInstruction.SetCoordinate(2 * iIndex + 1, aPoints[iIndex].Y)
+  Next
+
+  oRenderingInstruction.ClosePath = bClose
+  oRenderingInstruction.FillFigure = bFill
+
+  Return oRenderingInstruction
+End
+
+
+'' Creates a rendering primitive that repersents an outlined circle.
+''
+'' The **w** define the pen width.
+Static Public Function CreateStrokeWidt(w As Float) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(1)
+
+  oRenderingInstruction.InstructionType = StrokeWidth
+  oRenderingInstruction.SetCoordinate(0, w)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a solid color, that can be used for pen or brush.
+''
+'' The **iValue** define the red, green and blue components of the color.
+'' The **fOpacity** defines the inverse alpha component of the color.
+Static Public Function CreateSolidColor(iValue As Integer, Optional fOpacity As Float = 1.0) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(0)
+
+  oRenderingInstruction.InstructionType = SolidColor
+  oRenderingInstruction.ColorValue = iValue
+
+  If fOpacity <> 1.0 Then 
+    oRenderingInstruction.ColorValue.SetAlpha(iValue, Min(Max(CInt((1.0 - fOpacity) * 255 + 0.49), 0), 255))
+  Endif
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a font definition.
+''
+'' The **sFontFamilyName** define the name of the font family.
+'' The **fFontSize** defines the font size.
+'' The **iValue** define the red, green and blue components of the color.
+'' The **fOpacity** defines the inverse alpha component of the color.
+Static Public Function CreateFont(sFontFamilyName As String, fFontSize As Float, iValue As Integer, Optional fOpacity As Float = 1.0) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(1)
+
+  oRenderingInstruction.InstructionType = Font
+  oRenderingInstruction.ColorValue = iValue
+
+  If fOpacity <> 1.0 Then 
+    oRenderingInstruction.ColorValue.SetAlpha(iValue, Min(Max(CInt((1.0 - fOpacity) * 255 + 0.49), 0), 255))
+  Endif
+
+  oRenderingInstruction.Text = sFontFamilyName
+  oRenderingInstruction.SetCoordinate(0, fFontSize)
+
+  Return oRenderingInstruction
+End
+
+'' Creates a rendering primitive that repersents a text line.
+''
+'' The **sText** defines the text line to draw.
+'' The **fFontSize** defines the font size.
+'' The **oPosition** define the upper left corner of the bounding box for the text block.
+'' The **oSize** define the width and height of the bounding box for the text block.
+'' The **alignmentValue** defines the text alignment (0 is left, 0.5 is center, 1 is right).
+Static Public Function CreateTextBlock(sText As String, fFontSize As Float, oPosition As PointF, oSize As PointF, Optional fAlignment As Float = 0) As RenderingInstruction
+  Dim oRenderingInstruction As RenderingInstruction = New RenderingInstruction(5)
+
+  oRenderingInstruction.InstructionType = TextLine
+
+  oRenderingInstruction.Text = sText
+  oRenderingInstruction.SetCoordinate(0, oPosition.X)
+  oRenderingInstruction.SetCoordinate(1, fFontSize * 0.8 + oPosition.Y) ' Assume: Font Ascent is 0.8 font size / font Descant is 0.2 font size.
+  oRenderingInstruction.SetCoordinate(2, oSize.X)
+  oRenderingInstruction.SetCoordinate(3, oSize.Y)
+  oRenderingInstruction.SetCoordinate(4, Min(Max(fAlignment, 0), 1))
+
+  Return oRenderingInstruction
+End
+
+
+'' Gets the indicated rendering coordinate on valid index, or 0 otherwise.
+''
+'' The **iIndex** defines the index of the rendering coordinate to get.
+'' Returns: The indicated rendering coordinate on valid index, or 0 otherwise.
+Public Function GetCoordinate(iIndex As Integer) As Float
+  If iIndex < 0 Or If iIndex >= $aCoordinates.Length Then Return 0
+
+  Return $aCoordinates[iIndex]
+End
+
+'' Sets the indicated rendering coordinate on valid index, or does nothing.
+''
+'' The **iIndex** defines the index of the rendering coordinate to set.
+'' The **fValue** defines the value of the rendering coordinate to set.
+Public Sub SetCoordinate(iIndex As Integer, fValue As Float)
+  If iIndex < 0 Or If iIndex >= $aCoordinates.Length Then Return
+
+  $aCoordinates[iIndex] = fValue
+End
+
+'' Gets the number of rendering coordinates, currently registered.
+''
+'' Returns: The he number of rendering coordinates, currently registered.
+Public Function CountCoordinates() As Integer
+  Return $aCoordinates.Length
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Rendering instruction functionality
+' ###############################################
+

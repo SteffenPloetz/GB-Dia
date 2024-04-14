@@ -1,0 +1,37 @@
+' Gambas class file
+
+''' This class provides the possible operation types of the touring machine and the information needed for one single operation in the touring machine.
+
+' ###############################################
+' BEGIN Touring operand replacement functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This replacement type represents: No replacement.
+Static Public NoReplacement As Integer = 0
+
+'' This replacement type represents: Replace with position origin X coordinate.
+Static Public ReplaceWithX As Integer = 1
+
+'' This replacement type represents: Replace with position origin Y coordinate.
+Static Public ReplaceWithY As Integer = 2
+
+'' This replacement type represents: Replace with dimension Width.
+Static Public ReplaceWithW As Integer = 3
+
+'' This replacement type represents: Replace with dimension Height.
+Static Public ReplaceWithH As Integer = 4
+
+'' This replacement type represents: Replace with dimension Radius.
+Static Public ReplaceWithR As Integer = 5
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' ###############################################
+' END Touring operand replacement functionality
+' ###############################################

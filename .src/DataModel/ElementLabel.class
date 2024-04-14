@@ -1,0 +1,58 @@
+' Gambas class file
+
+''' This class represents the visible part of a model as a label within a flow.
+''' In BPMN this is the class **Label**.
+
+Export
+Inherits DiagramElement
+
+' ###############################################
+' BEGIN Element label functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Gets the bounding box of this label. Override base class property.
+Property Read Bounds As RectF
+
+'' Store the bounds.
+Private $oBounds As RectF = New RectF(0, 0, 0, 0)
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Bounds_Read() As RectF
+  Return $oBounds
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Sets bounding box of this label.
+'' This method is hidden in the hope, that only deived and **friend** classes know and use this method.
+''
+'' The **boundsValue** defines the new bounding box of this label.
+Public Sub _SetBounds(boundsValue As RectF)
+  $oBounds = boundsValue
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN Element label functionality
+' ###############################################

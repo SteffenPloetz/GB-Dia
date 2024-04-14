@@ -1,0 +1,21 @@
+' Gambas class file
+
+Static Private $sPath As String = "~/gambas-log.txt"
+
+Static Public Function LogToFile(sCategory As String, sTopic As String, sMessage As String) As Boolean
+  Dim hFile As File
+
+  If Exist($sPath) Then
+    hFile = Open $sPath For Write Append
+  Else
+    hFile = Open $sPath For Write Create
+  Endif
+
+  Print #hFile, Now; " | "; sCategory; " | "; sTopic; " | "; Replace$(Replace$(sMessage, "\n", "; "), ":;", ":")
+  Close #hFile
+
+  Return True
+
+Catch
+  Return False
+End

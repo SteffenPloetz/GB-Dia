@@ -1,0 +1,45 @@
+' Gambas class file
+
+''' This class represents the visible part of a model as the base class for **SequenceFlow** and **MessageFlow**.
+
+Export
+Inherits DiagramElement
+
+' ###############################################
+' BEGIN Labeled shape functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Constructs a new diagram element.
+Public Sub _new()
+  Super._SwitchToLabeledEdge()
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description. Override base class property.
+Private Function IsShape_Read() As Boolean
+  Return False
+End
+
+'' Private - no description. Override base class property.
+Private Function IsEdge_Read() As Boolean
+  Return True
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Diagram element functionality
+' ###############################################

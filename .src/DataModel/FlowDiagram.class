@@ -1,0 +1,80 @@
+' Gambas class file
+
+''' This class provides a flow diagram, the invisible part of a flow model.
+
+' ###############################################
+' BEGIN Flow diagram functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get the children.
+Property Read DiagramElements As ElementList
+
+'' Private - no description.
+Private $oDiagramElementList As ElementList
+
+'' Constructs a new flow diagram.
+''
+'' The **countValues** defines the number of values.
+Public Sub _new()
+  $oDiagramElementList = New ElementList
+End
+
+'' Destructs the (actual) flow diagram.
+Public Sub _free()
+  $oDiagramElementList.Clear()
+
+  $oDiagramElementList = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function DiagramElements_Read() As ElementList
+  Return $oDiagramElementList
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Gets the first selected diagram element.
+''
+'' Returns: The first selected diagram element in success, or null otherwise.
+Public Function GetFirstSelectedDiagramElement() As DiagramElement
+  Dim oIterator As ElementListIterator = $oDiagramElementList.Begin
+
+  While oIterator <> Null
+    Dim oElement As DiagramElement = oIterator.Data
+
+    If oElement <> Null Then
+      If oElement.IsSelected = True Then Return oElement
+    Endif
+
+    oIterator = oIterator.Next
+  Wend
+
+  Return Null
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Flow diagram functionality
+' ###############################################
+

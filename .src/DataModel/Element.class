@@ -1,0 +1,83 @@
+' Gambas class file
+
+''' This class represents the base class for the invisible part of a model as of **BaseElement** and the visible part of a model as of **DiagramElement**.
+''' It has been introduced to have a common base, that can be stored in **ElementList** double-linked list.
+
+Export
+
+' ###############################################
+' BEGIN Element functionality
+' ###############################################
+' Hierarchy of elements that can be handled is:
+' -----------------------------------------------
+' Element
+'   |--BaseElement
+'   |   |--FlowElement
+'   |        |--Node
+'   |        |--Sequence
+'   |        |--Data
+'   |        |--System
+'   |--DiagramElement
+'        |--Node
+'        |    |--LabeledShape
+'        |--Edge
+'             |--LabeledEdge SequenceFlow
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get the flag identifying this element as an base element.
+Property Read IsBaseElement As Boolean
+
+'' Get the flag identifying this element as an diagram element.
+Property Read IsDiagramElement As Boolean
+
+'' Private - no description.
+Private $bIsBaseElement As Boolean
+
+
+'' Constructs a new element.
+Public Sub _new()
+  $bIsBaseElement = True
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function IsBaseElement_Read() As Boolean
+  Return $bIsBaseElement
+End
+
+'' Private - no description.
+Private Function IsDiagramElement_Read() As Boolean
+  Return Not $bIsBaseElement
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Switches the default behavior from base element to diagram element.
+Public Sub SwitchToDiagramElement()
+  $bIsBaseElement = False
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Element functionality
+' ###############################################

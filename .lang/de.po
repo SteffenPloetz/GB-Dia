@@ -1,0 +1,67 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: GB Dia 3.19.0\n"
+"PO-Revision-Date: 2024-04-07 16:23 UTC\n"
+"Last-Translator: steffen <steffen@T520>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: FMain.form:64
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: FMain.form:59
+msgid "Exit"
+msgstr "Beenden"
+
+#: FMain.form:27
+msgid "File"
+msgstr "Datei"
+
+#: .project:1
+msgid "GB Dia"
+msgstr "GB Dia"
+
+#: .project:2
+msgid "GB Dia is a Gambas based diagram creation program for GNU/Linux, and released under the GPL license. It is inspited by the BPMN 2.0 specification, but tries to be open for numerous extensions."
+msgstr "GB Dia ist ein auf Gambas basierendes Diagrammerstellungsprogramm für GNU/Linux, das unter der GPL-Lizenz veröffentlicht wird. Es orientiert sich an der BPMN 2.0-Spezifikation, versucht aber, für zahlreiche Erweiterungen offen zu sein."
+
+#: FMain.class:35
+msgid "No"
+msgstr "Nein"
+
+#: FMain.form:43
+msgid "Open"
+msgstr "Öffnen"
+
+#: FMain.form:51
+msgid "Print"
+msgstr "Drucken"
+
+#: FMain.form:70
+msgid "Redo"
+msgstr "Wiederholen"
+
+#: FMain.form:32
+msgid "Tab 1"
+msgstr ""
+
+#: FMain.class:33
+msgid "There are unsaved changes.\nDo you really want to exit and lose the changes?"
+msgstr "Es gibt ungespeicherte Änderungen.\nWollen Sie wirklich beenden und die Änderungen verlieren?"
+
+#: FMain.form:79
+msgid "Undo"
+msgstr "Rückgängig"
+
+#: FMain.form:84
+msgid "View"
+msgstr ""
+
+#: FMain.class:34
+msgid "Yes"
+msgstr "Ja"
+

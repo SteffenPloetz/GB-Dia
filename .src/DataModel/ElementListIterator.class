@@ -1,0 +1,104 @@
+' Gambas class file
+
+''' This class provides a storage-item-iterator for a double-linked list of elements.
+
+Export
+
+' ###############################################
+' BEGIN Iterator functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Gets the data at this iterator's position.
+Property Read Data As Element
+
+'' Gets the next iterator position.
+Property Read Next As ElementListIterator
+
+'' Gets the previous iterator position.
+Property Read Previous As ElementListIterator
+
+'' Private - no description.
+Private $oItem As ElementListItem
+
+'' Constructs a new element list iterator.
+''
+'' The **itemValue** defines the element list item, this iterator points to.
+Public Sub _new(itemValue As ElementListItem)
+  $oItem = itemValue
+End
+
+'' Destructs the (actual) element list iterator.
+Public Sub _free()
+  $oItem = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Function Data_Read() As Element
+  If $oItem <> Null Then Return $oItem.Data
+
+  Return Null
+End
+
+'' Private - no description.
+Function Next_Read() As ElementListIterator
+  If $oItem <> Null And If $oItem.NextItem <> Null Then
+    Dim oResult As ElementListIterator = New ElementListIterator($oItem.NextItem)
+    Return oResult
+  Endif
+
+  Return Null
+End
+
+'' Private - no description.
+Private Function Previous_Read() As ElementListIterator
+  If $oItem <> Null And If $oItem.PreviousItem <> Null Then
+    Dim oResult As ElementListIterator = New ElementListIterator($oItem.PreviousItem)
+    Return oResult
+  Endif
+
+  Return Null
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Gets the element list item at this iterator's position. This method is hidden to prevent usage outside the list implementation.
+'' The only acceptable use is as a **friend** method within the list class.
+''
+'' Returns: The element list item at this iterator's position on success, or null otherwise.
+Public Function _Item_Read() As ElementListItem
+  Return $oItem
+End
+
+'' Sets the element list item at this iterator's position.
+'' This method is hidden in the hope, that only deived and **friend** classes know and use this method.
+''
+'' The **itemValue** defines the new element list item at this iterator's position.
+Public Function _Item_Write(itemValue As ElementListItem)
+  $oItem = itemValue
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Iterator functionality
+' ###############################################

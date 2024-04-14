@@ -1,0 +1,318 @@
+' Gambas class file
+
+''' This class provides a double-linked list of elements.
+
+Export
+
+' ###############################################
+' BEGIN List functionality for double-linked list
+' ###############################################
+' This class supports the array operator **[]**,
+' but recommended are the iterator methods.
+' Helper classes are:
+' -----------------------------------------------
+' - Element: Represents one storeable element
+' - ElementListItem: Implements a storage
+'   position within the double-linked list.
+' - ElementListIterator: Represents a storage
+'   position within the double-linked list.
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get the number of elements in the list.
+Property Read Count As Integer
+
+'' Get the first element in the list.
+Property Read First As Element
+
+'' Get the last element in the list.
+Property Read Last As Element
+
+'' The iterator pointing to the first position of the list.
+''
+'' Remarks: Prefer iterator over direct calls like **GetAt** or **SetAt** when accessing more than one position.
+Property Read Begin As ElementListIterator
+
+'' The iterator pointing to the last position of the list.
+''
+'' Remarks: Prefer iterator over direct calls like **GetAt** or **SetAt** when accessing more than one position.
+Property Read End As ElementListIterator
+
+
+'' Private - no description.
+Private $oFirstItem As ElementListItem
+
+'' Private - no description.
+Private $oLastItem As ElementListItem
+
+
+'' Constructs a new element list.
+''
+'' The **pointsValue** defines the array of points. The ponts alternathe between x-coordinate and y-coordinate.
+Public Sub _new()
+  $oFirstItem = Null
+  $oLastItem = Null
+End
+
+'' Destructs the (actual) element list.
+Public Sub _free()
+  Clear()
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Count_Read() As Integer
+  Dim iCount As Integer
+  Dim oCurrentItem As ElementListItem
+
+  If $oFirstItem = Null Then Return 0
+
+  iCount = 1
+  oCurrentItem = $oFirstItem
+  Do While oCurrentItem.NextItem <> Null
+    oCurrentItem = oCurrentItem.NextItem
+    iCount += 1
+  Loop
+
+  Return iCount
+End
+
+'' Private - no description.
+Private Sub First_Read() As Element
+  If $oFirstItem <> Null Then Return $oFirstItem.Shape
+
+  Return Null
+End
+
+'' Private - no description.
+Private Sub Last_Read() As Element
+  If $oLastItem <> Null Then Return $oLastItem.Shape
+
+  Return Null
+End
+
+'' Private - no description.
+Private Sub Begin_Read() As ElementListIterator
+  If $oFirstItem <> Null Then
+    Dim oResult As ElementListIterator = New ElementListIterator($oFirstItem)
+    Return oResult
+  Endif
+
+  Return Null
+End
+
+'' Private - no description.
+Private Sub End_Read() As ElementListIterator
+  If $oLastItem <> Null Then
+    Dim oResult As ElementListIterator = New ElementListIterator($oLastItem)
+    Return oResult
+  Endif
+
+  Return Null
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Clears this element list and releases all elements.
+Public Function Clear() As Integer
+  Dim iCount As Integer
+  Dim oCurrentItem As ElementListItem
+
+  ' Clear from last to first item.
+  If $oLastItem = Null Then Return 0
+
+  iCount = 1
+  oCurrentItem = $oLastItem
+  Do While oCurrentItem.PreviousItem <> Null
+    oCurrentItem.NextItem = Null
+    $oLastItem = oCurrentItem.PreviousItem
+    oCurrentItem.PreviousItem = Null
+    oCurrentItem = $oLastItem
+    iCount += 1
+  Loop
+
+  oCurrentItem.NextItem = Null
+  oCurrentItem = Null
+  $oLastItem = Null
+  $oFirstItem = Null
+
+  Return iCount
+End
+
+'' Adds an element at the end of the element list.
+''
+'' The **elementValue** defines the element to add at the end of the element list.
+Public Function Push(elementValue As Element) As Boolean
+  Dim oCurrentItem As ElementListItem
+
+  If elementValue = Null Then Return False
+
+  If $oLastItem = Null Then 
+    $oFirstItem = New ElementListItem(Null, elementValue, Null)
+    $oLastItem = $oFirstItem
+
+    Return True
+  Endif
+
+  oCurrentItem = $oLastItem
+  $oLastItem = New ElementListItem(oCurrentItem, elementValue, Null)
+  oCurrentItem.NextItem = $oLastItem
+
+  Return True
+End
+
+'' Removes an element from the end of the element list.
+''
+'' Returns: The element on success, or null otherwise.
+Public Function Pop() As Element
+  Dim oCurrentItem As ElementListItem
+
+  If $oLastItem = Null Then Return Null
+
+  oCurrentItem = $oLastItem
+  $oLastItem = oCurrentItem.PreviousItem
+  oCurrentItem.PreviousItem = Null
+  If $oLastItem <> Null Then
+    $oLastItem.NextItem = Null
+  Else
+    $oFirstItem = $oLastItem
+  Endif
+
+  Return oCurrentItem.Shape
+End
+
+'' Get the element list iterator, pointing to the indicated list position.
+''
+'' The **iIndex** defines the zero-based index of the position to get the iterator for.
+'' Returns: The list iterator, pointing to the indicated list position, on success, or null otherwise.
+'' Remarks: Prefer iterator over direct calls like **GetAt** or **SetAt** when accessing more than one position.
+Public Function At(iIndex As Integer) As ElementListIterator
+  Dim oCurrentItem As ElementListItem = $oFirstItem
+  Dim iCount As Integer = 0
+
+  While iCount < iIndex And oCurrentItem <> Null
+    oCurrentItem = oCurrentItem.NextItem
+    iCount += 1
+  Wend
+
+  If iCount = iIndex And oCurrentItem <> Null Then
+    Dim oResult As ElementListIterator = New ElementListIterator(oCurrentItem)
+    Return oResult
+  Endif
+
+  Return Null
+End
+
+
+'' Get the element at the indicated index in this double-linked list. This hidden method is accessible via the array operator **[]**.
+''
+'' The **index** defines the zero-based index of the position to get the element from.
+'' Returns: The indicated element on success, or null otherwise.
+'' Remarks: Use iterator functionaluty to access more than one element! Call **Begin**, **End** or **At** to obtain an iterator.
+Public Sub _get(iIndex As Integer) As Element
+  Dim oCurrentItem As ElementListItem = $oFirstItem
+  Dim iCount As Integer = 0
+
+  While iCount < iIndex And oCurrentItem <> Null
+    oCurrentItem = oCurrentItem.NextItem
+    iCount += 1
+  Wend
+
+  If iCount = iIndex Then Return oCurrentItem.Data
+
+  Return Null
+End
+
+'' Set the element at the indicated index in this double-linked  list. This hidden method is accessible via the array operator **[]**.
+''
+'' The **elementValue** defines element to set at the indicated position of the element list.
+'' The **index** defines the zero-based index of the position to set the element to.
+'' Remarks: Use iterator functionaluty to access more than one element! Call **Begin**, **End** or **At** to obtain an iterator.
+Public Sub _put(elementValue As Element, iIndex As Integer)
+  Dim oCurrentItem As ElementListItem = $oFirstItem
+  Dim iCount As Integer = 0
+
+  While iCount < iIndex And oCurrentItem <> Null
+    oCurrentItem = oCurrentItem.NextItem
+    iCount += 1
+  Wend
+
+  If iCount = iIndex Then
+    oCurrentItem.Data = elementValue
+  Endif
+End
+
+'' Inserts the element at the indicated position in this double-linked  list.
+''
+'' The **iterator** defines the position where to insert the element.
+'' The **elementValue** defines the element to insert at the indicated position of the element list.
+'' Returns: True on success, or False otherwise.
+Public Function Insert(oIterator As ElementListIterator, elementValue As Element) As Boolean
+  If oIterator = Null Then
+    Return False
+  Endif
+
+  Dim oCurrentItem As ElementListItem = oIterator._Item_Read()
+  If oCurrentItem = Null Then
+    Return False
+  Endif
+
+  Dim oNewItem As ElementListItem = New ElementListItem(oCurrentItem.PreviousItem, elementValue, oCurrentItem)
+  If oCurrentItem.PreviousItem <> Null Then
+    oCurrentItem.PreviousItem.NextItem = oNewItem
+  Endif
+  oCurrentItem.PreviousItem = oNewItem
+
+  Return True
+End
+
+'' Deletes the element at the indicated position in this double-linked  list.
+''
+'' The **iterator** defines the position where to delete the element.
+'' Returns: True on success, or False otherwise.
+Public Function delete(iterator As ElementListIterator) As Boolean
+  If iterator = Null Then
+    Return False
+  Endif
+
+  Dim oCurrentItem As ElementListItem = iterator._Item_Read()
+  If oCurrentItem = Null Then
+    Return False
+  Endif
+
+  If oCurrentItem.PreviousItem <> Null Then
+    oCurrentItem.PreviousItem.NextItem = oCurrentItem.NextItem
+  Endif
+  If oCurrentItem.NextItem <> Null Then 
+    oCurrentItem.NextItem.PreviousItem = oCurrentItem.PreviousItem
+  Endif
+  oCurrentItem.PreviousItem = Null
+  oCurrentItem.NextItem = Null
+  oCurrentItem = Null
+
+  Return True
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END List functionality for double-linked list
+' ###############################################
