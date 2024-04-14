@@ -1,1 +1,1 @@
-This folder contains installation packages.
+This folder contains installation packages for various Linux distributions.
