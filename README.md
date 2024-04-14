@@ -11,8 +11,8 @@ The aim was to test the Gambas3 development environment (version 3.19.1) and the
 
 With one exception, all questions can be answered with a convincing YES - only the source code editor suffers somewhat from the fact that the font size is not adjustable and code folding is not available.
 
-The development goal of this version was:
-* Error-free reading and display of the files https://github.com/bpmn-miwg/bpmn-miwg-test-suite/tree/master/Reference/A.1.0.bpmn and https://github.com/bpmn-miwg/bpmn-miwg-test-suite/tree/master/Reference/A.2.0.bpmn from the BPMN test suite
+The development goals for this version were:
+* Error-free reading and display of the files https://github.com/bpmn-miwg/bpmn-miwg-test-suite/tree/master/Reference **A.1.0.bpmn** and **A.2.0.bpmn** from the BPMN test suite
 * Undo-Redo function
 * Print function
 * In-place text editing function
