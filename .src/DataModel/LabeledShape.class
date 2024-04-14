@@ -1,0 +1,22 @@
+' Gambas class file
+
+''' This class represents thevisible part of a model as the base class for **FlowShape**.
+
+Export
+Inherits DiagramElement
+
+' ###############################################
+' BEGIN Labeled shape functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' ###############################################
+' END Diagram element functionality
+' ###############################################

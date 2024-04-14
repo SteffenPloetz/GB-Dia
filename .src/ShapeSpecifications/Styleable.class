@@ -1,0 +1,108 @@
+' Gambas class file
+
+''' This class is the base class of styleable geomrtric primitives (lines, rectangles, circles, ...).
+''' It provides the style attributes for derived classes like **RoundedRect**.
+
+Export
+
+' ###############################################
+' BEGIN Extended SVG Styleable functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This property gets or sets the stroke color.
+Property StrokeColor As Integer
+
+'' This property gets or sets the stroke width.
+Property StrokeWidth As Float
+
+'' This property gets or sets the fill color.
+Property FillColor As Integer
+
+'' This property gets or sets the fill opacity.
+Property FillOpacity As Float
+
+
+'' Private - no description.
+Private $iStrokeColor As Integer
+
+'' Private - no description.
+Private $fStrokeWidth As Float
+
+'' Private - no description.
+Private $iFillColor As Integer
+
+'' Private - no description.
+Private $fFillOpacity As Float
+
+'' Constructs a new styleable.
+''
+'' The **iStrokeColor** defines the stroke color.
+'' The **fStrokeWidth** defines the stroke width.
+'' The **iFillColor** defines the fill color.
+'' The **fFillOpacity** defines the fill opacity.
+Public Sub _new(Optional iStrokeColor As Integer = Color.Black, Optional fStrokeWidth As Float = 1.5, Optional iFillColor As Integer = Color.White, Optional fFillOpacity As Float = 0.0)
+  $iStrokeColor = iStrokeColor
+  $fStrokeWidth = fStrokeWidth
+  $iFillColor = iFillColor
+  $fFillOpacity = fFillOpacity
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function StrokeColor_Read() As Integer
+  Return $iStrokeColor
+End
+
+'' Private - no description.
+Private Sub StrokeColor_Write(iColor As Integer)
+  $iStrokeColor = iColor
+End
+
+'' Private - no description.
+Private Function StrokeWidth_Read() As Float
+  Return $fStrokeWidth
+End
+
+'' Private - no description.
+Private Sub StrokeWidth_Write(strokeWidth As Float)
+  $fStrokeWidth = strokeWidth
+End
+
+'' Private - no description.
+Private Function FillColor_Read() As Integer
+  Return $iFillColor
+End
+
+'' Private - no description.
+Private Sub FillColor_Write(fillColor As Integer)
+  $iFillColor = fillColor
+End
+
+'' Private - no description.
+Private Function FillOpacity_Read() As Float
+  Return $fFillOpacity
+End
+
+'' Private - no description.
+Private Sub FillOpacity_Write(fillOpacity As Float)
+  $fFillOpacity = fillOpacity
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Extended SVG Styleable functionality
+' ###############################################

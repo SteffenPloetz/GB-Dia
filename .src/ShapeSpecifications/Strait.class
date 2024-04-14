@@ -1,0 +1,110 @@
+' Gambas class file
+
+''' This class provides a styleable rhombus. The behavior is similar to SVG line.
+''' Style attributes are part of the base class **ESvgStyleable**.
+
+Export
+Inherits Styleable
+
+' ###############################################
+' BEGIN Line functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This property gets or sets the touring machine to calculate the start point x-coordinate.
+Property X0 As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the start point y-coordinate.
+Property Y0 As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the end point x-coordinate.
+Property X1 As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the end point y-coordinate.
+Property Y1 As TouringMachine
+
+
+'' Private - no description.
+Private $oX0 As TouringMachine
+
+'' Private - no description.
+Private $oY0 As TouringMachine
+
+'' Private - no description.
+Private $oX1 As TouringMachine
+
+'' Private - no description.
+Private $oY1 As TouringMachine
+
+
+'' Constructs a new styleable line. Base class **Styleable** is.
+''
+'' The **x0Value** defines the start point x-coordinate.
+'' The **x0Value** defines the start point y-coordinate.
+'' The **x1Value** defines the end point x-coordinate.
+'' The **y1Value** defines the end point y-coordinate.
+Public Sub _new(x0Value As TouringMachine, y0Value As TouringMachine, x1Value As TouringMachine, y1Value As TouringMachine)
+  $oX0 = x0Value
+  $oY0 = y0Value
+  $oX1 = x1Value
+  $oY1 = y1Value
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function X0_Read() As TouringMachine
+  Return $oX0
+End
+
+'' Private - no description.
+Private Sub X0_Write(x As TouringMachine)
+  $oX0 = x
+End
+
+'' Private - no description.
+Private Function Y0_Read() As TouringMachine
+  Return $oY0
+End
+
+'' Private - no description.
+Private Sub Y0_Write(y As TouringMachine)
+  $oY0 = y
+End
+
+'' Private - no description.
+Private Function X1_Read() As TouringMachine
+  Return $oX1
+End
+
+'' Private - no description.
+Private Sub X1_Write(x As TouringMachine)
+  $oX1 = x
+End
+
+'' Private - no description.
+Private Function Y1_Read() As TouringMachine
+  Return $oY1
+End
+
+'' Private - no description.
+Private Sub Y1_Write(y As TouringMachine)
+  $oY1 = y
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Line  functionality
+' ###############################################

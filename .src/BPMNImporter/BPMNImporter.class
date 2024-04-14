@@ -1,0 +1,418 @@
+' Gambas class file
+
+''' This class provides an XML reader for BPMN files.
+
+Create Private
+
+' ###############################################
+' BEGIN BPMN importer functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Imports a BPMN file.
+''
+'' The **oFlowModel** defines the model, that shap be filled with processes and diagrams from the BPMN file.
+'' The **sFilePath** defines the file path of the BPMN file.
+'' Returns: Error messages if any, or an enpty string otherwise.
+Static Public Function ReadBPMN(oFlowModel As FlowModel, sFilePath As String) As String
+  Dim sResultMessages As String = ""
+  Dim oXmlDocument As XmlDocument
+
+  Try oXmlDocument = New XmlDocument(sFilePath)
+  If Error Then
+    sResultMessages = Error.Text
+  Else
+    If oXmlDocument <> Null Then
+      Dim oXmlElement As XmlElement = oXmlDocument.Root
+      If oXmlElement <> Null Then 
+        If InStr(oXmlElement.Name, "definitions") <> 0 Then
+          For Each oChild As XmlElement In oXmlElement.ChildElements
+            If InStr(oChild.Name, "process") <> 0 Then
+              Dim oFlowProcess As FlowProcess = New FlowProcess
+              oFlowModel.Processes.Add(oFlowProcess)
+              Dim sProcessResultMessages As String = ReadProcess(oFlowProcess, oChild)
+              If sProcessResultMessages <> "" Then
+                If sResultMessages <> "" Then sResultMessages &= "\n"
+                sResultMessages &= "Reading process in BPMN file '" & sFilePath & "'\n" & sProcessResultMessages
+              Endif
+            Else If InStr(oChild.Name, "BPMNDiagram") <> 0 Then 
+              Dim sDiagramResultMessages As String = ReadBPMNDiagram(oFlowModel.Diagram, oFlowModel.Processes, oChild)
+              If sDiagramResultMessages <> "" Then
+                If sResultMessages <> "" Then sResultMessages &= "\n"
+                sResultMessages &= "Reading BPMNDiagram in BPMN file '" & sFilePath & "'\n" & sDiagramResultMessages
+              Endif
+            Else 
+              If sResultMessages <> "" Then sResultMessages &= "\n"
+              sResultMessages &= "Root cild in BPMN file '" & sFilePath & "' is neither a 'process' nor a 'BPMNDiagram' element, but a '" & oChild.Name & "'."
+            Endif
+          Next
+        Else 
+          If sResultMessages <> "" Then sResultMessages &= "\n"
+          sResultMessages &= "Root element in BPMN file '" & sFilePath & "' is not a 'definitions' element."
+        Endif
+      Else
+        If sResultMessages <> "" Then sResultMessages &= "\n"
+        sResultMessages &= "No root element is BPMN file '" & sFilePath & "'."
+      Endif
+    Else
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "Failed to read BPMN file '" & sFilePath & "'."
+    Endif
+  Endif
+
+  oXmlDocument = Null
+  Return sResultMessages
+End
+
+'' Private - no description.
+Static Private Function ReadProcess(oFlowProcess As FlowProcess, oProcessElement As XmlElement) As String
+  Dim sResultMessages As String = ""
+  Dim sNodeID As String
+  Dim oModelNode As ModelElement
+
+  For Each oChild As XmlElement In oProcessElement.ChildElements
+    Dim sProcessNodeType As String = ""
+    For Each sNodeType As String In BPMN.ProcessNodeTypes
+      If InStr(oChild.Name, sNodeType) <> 0 Then
+        sProcessNodeType = sNodeType
+        Break
+      Endif
+    Next
+    If sProcessNodeType = "" Then
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "    Process child element type '" & oChild.Name & "' unknown."
+    Endif
+
+    sNodeID = oChild.GetAttribute("id", GB.IgnoreCase)
+    If sNodeID <> "" Then
+      If sProcessNodeType = "sequenceFlow" Then
+        oModelNode = New ModelSequence(sProcessNodeType)
+      Else
+        oModelNode = New ModelNode(sProcessNodeType)
+      Endif
+      oFlowProcess.AddOrSet(sNodeID, oModelNode)
+
+      Dim aAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+      For iAttributeIndex As Integer = 0 To aAttributeNamesAndValues.Length - 1 Step 2
+        If aAttributeNamesAndValues[iAttributeIndex] = "name" Then 
+          oModelNode.Name = FromHTML(aAttributeNamesAndValues[iAttributeIndex + 1])
+        Else
+          oModelNode.AddOrSetAttribute(aAttributeNamesAndValues[iAttributeIndex], aAttributeNamesAndValues[iAttributeIndex + 1])
+        Endif
+      Next
+
+      For Each oGrandChild As XmlElement In oChild.ChildElements
+        Dim bIsNodeSubNodeTypeKnown As Boolean = False
+        For Each sProcessNodeSubNodeType As String In BPMN.ProcessNodeSubNodeTypes
+          If InStr(oGrandChild.Name, sProcessNodeSubNodeType) <> 0 Then
+            bIsNodeSubNodeTypeKnown = True
+          Endif
+        Next
+        If bIsNodeSubNodeTypeKnown = False Then
+          If sResultMessages <> "" Then sResultMessages &= "\n"
+          sResultMessages &= "  Process child element type '" & oChild.Name & "' has grand-child element of type '" & oGrandChild.Name & "', which is unknown."
+        Endif
+
+        If InStr(oGrandChild.Name, "incoming") <> 0 Then
+          ' ToDo: Register incoming edges.
+        Endif
+        If InStr(oGrandChild.Name, "outgoing") <> 0 Then
+          ' ToDo: Register outgoing edges.
+        Endif
+      Next
+    Else
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "Process " & sProcessNodeType & " without id."
+    Endif
+  Next
+
+  Return sResultMessages
+End
+
+'' Private - no description.
+Static Private Function ReadBPMNDiagram(oFlowDiagram As FlowDiagram, aFlowProcesses As FlowProcess[], oDiagramElement As XmlElement) As String
+  Dim sResultMessages As String = ""
+  Dim sNodeRefID As String
+
+  For Each oChild As XmlElement In oDiagramElement.ChildElements
+    Dim sDiagramNodeType As String = ""
+    For Each sNodeType As String In BPMN.DiagramNodeTypes
+      If InStr(oChild.Name, sNodeType) <> 0 Then
+        sDiagramNodeType = sNodeType
+        Break
+      Endif
+    Next
+    If sDiagramNodeType = "" Then
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "    Diagram child element type '" & oChild.Name & "' unknown."
+    Endif
+
+    sNodeRefID = oChild.GetAttribute("bpmnElement", GB.IgnoreCase)
+    If sNodeRefID <> "" Then
+      If sDiagramNodeType = "BPMNPlane" Then 
+        Dim sPlaneResultMessage As String = ReadBPMNPlane(oFlowDiagram, aFlowProcesses, oChild)
+        If sPlaneResultMessage <> "" Then
+          If sResultMessages <> "" Then sResultMessages &= "\n"
+          sResultMessages &= "    Diagram " & sDiagramNodeType & "\n" & sPlaneResultMessage
+        Endif
+      Endif
+    Else
+      'If sResultMessages <> "" Then sResultMessages &= "\n"
+      'sResultMessages &= "    Diagram " & sDiagramNodeType & " without refId."
+    Endif
+  Next
+
+  Return sResultMessages
+End
+
+'' Private - no description.
+Static Private Function ReadBPMNPlane(oFlowDiagram As FlowDiagram, aFlowProcesses As FlowProcess[], oPlaneElement As XmlElement) As String
+  Dim sResultMessages As String = ""
+  Dim sNodeRefID As String
+  Dim sNodeID As String
+  Dim oShapeNode As FlowShape
+  Dim oEdgeNode As FlowEdge
+
+  For Each oChild As XmlElement In oPlaneElement.ChildElements
+    Dim sPlaneNodeType As String = ""
+    For Each sNodeType As String In BPMN.PlaneNodeTypes
+      If InStr(oChild.Name, sNodeType) <> 0 Then
+        sPlaneNodeType = sNodeType
+        Break
+      Endif
+    Next
+    If sPlaneNodeType = "" Then
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "        Plane child element type '" & oChild.Name & "' unknown."
+    Endif
+
+    sNodeRefID = oChild.GetAttribute("bpmnElement", GB.IgnoreCase)
+    If sNodeRefID <> "" Then
+      Dim oRefNode As ModelElement = FindRefNode(aFlowProcesses, sNodeRefID)
+      sNodeID = oChild.GetAttribute("id", GB.IgnoreCase)
+
+      If oRefNode <> Null Then
+        If InStr(oChild.Name, "BPMNShape") <> 0 Then
+          Dim aBounds As RectF = New RectF(0, 0, 0, 0)
+          Dim aShapeLabelBounds As RectF = New RectF(0, 0, 0, 0)
+          Dim sBoundsAndLabelResultMessages As String = ReadBPMNShapeBoundsAndLabel(oChild, ByRef aBounds, ByRef aShapeLabelBounds)
+          If sBoundsAndLabelResultMessages <> "" Then
+            If sResultMessages <> "" Then sResultMessages &= "\n"
+            sResultMessages &= "            Plane child element type '" & oChild.Name & "' \n" & sBoundsAndLabelResultMessages
+          Endif
+
+          oShapeNode = New FlowShape(aBounds.X, aBounds.Y, aBounds.W, aBounds.H, oRefNode.TypeName)
+          oFlowDiagram.DiagramElements.Push(oShapeNode)
+          oShapeNode.Node = oRefNode
+          If aShapeLabelBounds.X = aShapeLabelBounds.Y And If aShapeLabelBounds.Y = aShapeLabelBounds.W And If aShapeLabelBounds.W = aShapeLabelBounds.H Then
+            oShapeNode.SetNameBoundsToEditorBestBounds()
+          Else
+            oShapeNode.NameBounds = aShapeLabelBounds
+          Endif
+
+          Dim aShapeAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+          For iAttributeIndex As Integer = 0 To aShapeAttributeNamesAndValues.Length - 1 Step 2
+            'oShapeNode.AddOrSetAttribute(aShapeAttributeNamesAndValues[iAttributeIndex], aShapeAttributeNamesAndValues[iAttributeIndex + 1])
+          Next
+        Else If InStr(oChild.Name, "BPMNEdge") <> 0 Then
+          Dim aWayPoints As PointF[] = New PointF[]
+          Dim aEdgeLabelBounds As RectF = New RectF(0, 0, 0, 0)
+          Dim sWaypointsAndLabelResultMessages As String = ReadBPMNWaypointsAndLabel(oChild, ByRef aWayPoints, ByRef aEdgeLabelBounds)
+          If sWaypointsAndLabelResultMessages <> "" Then
+            If sResultMessages <> "" Then sResultMessages &= "\n"
+            sResultMessages &= "            Plane child element type '" & oChild.Name & "' \n" & sWaypointsAndLabelResultMessages
+          Endif
+
+          oEdgeNode = New FlowEdge(aWayPoints)
+          oFlowDiagram.DiagramElements.Push(oEdgeNode)
+          oEdgeNode.Sequence = oRefNode
+          If aEdgeLabelBounds.X = aEdgeLabelBounds.Y And If aEdgeLabelBounds.Y = aEdgeLabelBounds.W And If aEdgeLabelBounds.W = aEdgeLabelBounds.H Then
+            oEdgeNode.SetNameBoundsToEditorBestBounds()
+          Else
+            oEdgeNode.NameBounds = aEdgeLabelBounds
+          Endif
+
+          Dim aEdgeAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+          For iAttributeIndex As Integer = 0 To aEdgeAttributeNamesAndValues.Length - 1 Step 2
+            'oShapeNode.AddOrSetAttribute(aEdgeAttributeNamesAndValues[iAttributeIndex], aEdgeAttributeNamesAndValues[iAttributeIndex + 1])
+          Next
+        Endif
+      Else
+        If sPlaneNodeType = "" Then
+          If sResultMessages <> "" Then sResultMessages &= "\n"
+          sResultMessages &= "            Plane child element type '" & oChild.Name & "' references '" & sNodeRefID & "', that is not recognizable."
+        Endif
+      Endif
+    Else
+      If sResultMessages <> "" Then sResultMessages &= "\n"
+      sResultMessages &= "            Plane child element type '" & oChild.Name & "' without refId."
+    Endif
+  Next
+
+  Return sResultMessages
+End
+
+Static Private Function ReadBPMNShapeBoundsAndLabel(oShapeElement As XmlElement, ByRef aBounds As RectF, ByRef aLabelBounds As RectF) As String
+  Dim sResultMessages As String = ""
+
+  For Each oChild As XmlElement In oShapeElement.ChildElements
+    If InStr(oChild.Name, "Bounds") <> 0 Then
+      aBounds = ReadBPMNBounds(oChild)
+    Else If InStr(oChild.Name, "BPMNLabel") <> 0 Then
+      Dim aLabelAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+      For iAttributeIndex As Integer = 0 To aLabelAttributeNamesAndValues.Length - 1 Step 2
+        'oShapeNode.AddOrSetAttribute(aLabelAttributeNamesAndValues[iAttributeIndex], aLabelAttributeNamesAndValues[iAttributeIndex + 1])
+      Next
+
+      For Each oGrandChild As XmlElement In oChild.ChildElements
+        If InStr(oGrandChild.Name, "Bounds") <> 0 Then
+          aLabelBounds = ReadBPMNBounds(oGrandChild)
+        Else
+          sResultMessages = "                Shape element's label child type '" & oGrandChild.Name & "' unknown."
+        Endif
+      Next
+    Else
+      sResultMessages = "                Shape element's child type '" & oGrandChild.Name & "' unknown."
+    Endif
+  Next
+
+  Return sResultMessages
+End
+
+Static Private Function ReadBPMNBounds(oBoundsElement As XmlElement) As RectF
+  Dim oBounds As RectF = New RectF(0, 0, 0, 0)
+
+  oBounds.X = CFloat(oBoundsElement.GetAttribute("x"))
+  oBounds.Y = CFloat(oBoundsElement.GetAttribute("y"))
+  oBounds.W = CFloat(oBoundsElement.GetAttribute("width"))
+  oBounds.H = CFloat(oBoundsElement.GetAttribute("height"))
+
+  Return oBounds
+End
+
+Static Private Function ReadBPMNWaypointsAndLabel(oEdgeElement As XmlElement, ByRef aWayPoints As PointF[], ByRef aLabelBounds As RectF) As String
+  Dim sResultMessages As String = ""
+
+  For Each oChild As XmlElement In oEdgeElement.ChildElements
+    If InStr(oChild.Name, "waypoint") <> 0 Then
+      Dim aAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+      Dim oPoint As PointF = New PointF
+      For iAttributeIndex As Integer = 0 To aAttributeNamesAndValues.Length - 1 Step 2
+        If aAttributeNamesAndValues[iAttributeIndex] = "x" Then
+          oPoint.X = CFloat(aAttributeNamesAndValues[iAttributeIndex + 1])
+        Else If aAttributeNamesAndValues[iAttributeIndex] = "y" Then
+          oPoint.Y = CFloat(aAttributeNamesAndValues[iAttributeIndex + 1])
+        Endif
+      Next
+      aWayPoints.Add(oPoint)
+     Else If InStr(oChild.Name, "BPMNLabel") <> 0 Then
+      Dim aLabelAttributeNamesAndValues As String[] = ExtractAttributeNamesAndValues(oChild.ToString())
+      For iAttributeIndex As Integer = 0 To aLabelAttributeNamesAndValues.Length - 1 Step 2
+        'oShapeNode.AddOrSetAttribute(aLabelAttributeNamesAndValues[iAttributeIndex], aLabelAttributeNamesAndValues[iAttributeIndex + 1])
+      Next
+
+      For Each oGrandChild As XmlElement In oChild.ChildElements
+        If InStr(oGrandChild.Name, "Bounds") <> 0 Then
+          aLabelBounds = ReadBPMNBounds(oGrandChild)
+        Else
+          sResultMessages = "                Edge element's label child type '" & oGrandChild.Name & "' unknown."
+        Endif
+      Next
+    Else
+      sResultMessages = "                Edge element's child type '" & oGrandChild.Name & "' unknown."
+    Endif
+  Next
+
+  Return sResultMessages
+End
+
+
+Static Private Function FindRefNode(aFlowProcesses As FlowProcess[], sIdentity As String) As ModelElement
+  For Each oFlowProcess As FlowProcess In aFlowProcesses
+    Dim oElement As ModelElement = oFlowProcess.TryGetValue(sIdentity)
+    If oElement <> Null Then 
+      Return oElement
+    Endif
+  Next
+
+  Return Null
+End
+
+
+'' Private - no description.
+Static Private Function ExtractAttributeNamesAndValues(sRawNode As String) As String[]
+  Dim aNamesAndValues As String[] = New String[]
+
+  If sRawNode = Null Then Return aNamesAndValues
+  If sRawNode = "" Then Return aNamesAndValues
+
+  Dim iPosition As Integer = InStr(sRawNode, "<", 0, GB.IgnoreCase)
+  If iPosition = 0 Then Return aNamesAndValues
+
+  While Mid(sRawNode, iPosition, 1) = " "
+    iPosition = iPosition + 1
+  Wend
+
+  While Mid(sRawNode, iPosition, 1) <> " " And Mid(sRawNode, iPosition, 1) <> ">"
+    iPosition = iPosition + 1
+  Wend
+
+  If Mid(sRawNode, iPosition, 1) = ">" Then Return aNamesAndValues
+  iPosition = iPosition + 1
+
+  Dim iNameStart As Integer
+  Dim iNameLength As Integer
+  Dim sName As String
+  Dim iValueStart As Integer
+  Dim iValueLength As Integer
+  Dim sValue As String
+  While Mid(sRawNode, iPosition, 1) <> ">"
+    iNameStart = iPosition
+    While Mid(sRawNode, iPosition, 1) <> " " And Mid(sRawNode, iPosition, 1) <> "="
+      iPosition = iPosition + 1
+    Wend
+    iNameLength = iPosition - iNameStart
+    sName = Mid(sRawNode, iNameStart, iNameLength)
+    aNamesAndValues.Add(sName)
+    iPosition = iPosition + 1
+
+    While Mid(sRawNode, iPosition, 1) <> "\""
+      iPosition = iPosition + 1
+    Wend
+    iPosition = iPosition + 1
+    iValueStart = iPosition
+
+    While Mid(sRawNode, iPosition, 1) <> "\"" And Mid(sRawNode, iPosition - 1, 1) <> "\\"
+      iPosition = iPosition + 1
+    Wend
+    iValueLength = iPosition - iValueStart
+    sValue = Mid(sRawNode, iValueStart, iValueLength)
+    aNamesAndValues.Add(sValue)
+    iPosition = iPosition + 1
+
+    While Mid(sRawNode, iPosition, 1) = " "
+      iPosition = iPosition + 1
+    Wend
+  Wend
+
+  Return aNamesAndValues
+End
+
+Static Private Function FromHTML(sText As String) As String
+  Dim sResult As String
+
+  sResult = Replace$(Replace$(sText, "&#10;", "\n"), "&#12;", "\r")
+
+  Return sResult
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END BPMN importer functionality
+' ###############################################

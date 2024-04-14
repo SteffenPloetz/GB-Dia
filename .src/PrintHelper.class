@@ -1,0 +1,85 @@
+' Gambas class file
+
+''' This class provides all the printing functionality for a **Cairo** based drawing application.
+
+'' Buffer the printer, that provides the printing functionality.
+Private $oPrinter As Printer
+
+'' Buffer the image to print to paper, to PDF and PS.
+Private $oImage As Image
+
+'' Buffer the model to print to SVG.
+Private $oModel As FlowDiagram
+
+'' Buffer the file name for an print to SVG buffer-file.
+Private $sBufferFile As String
+
+'' The only method, that must be called from outside.
+''
+'' The **oImage** defines the image to print to Paper, PDF and PS.
+'' The **oModel** defines the data-nodel (diagram) to print to SVG.
+Public Sub Print(oImage As Image, oModel As FlowDiagram)
+  $oImage = oImage
+  $oModel = oModel
+  $sBufferFile = ""
+  $oPrinter = New Printer As "ctrlPrinter"
+
+  $oPrinter.Paper = Printer.A4
+  $oPrinter.Orientation = Printer.Landscape
+
+  If $oPrinter.Configure() Then
+    $oModel = Null
+    $oImage = Null
+    $oPrinter = Null
+    Return
+  Endif
+
+  $oPrinter.Print()
+  $oModel = Null
+  $oImage = Null
+  $oPrinter = Null
+
+  ' We have to overwrite the standard print function result with the separate file for optimized printing.
+  If $sBufferFile <> "" Then
+    Try Move $sBufferFile Kill Replace$($sBufferFile, "_buffer.", ".")
+  Endif
+End
+
+'' Event handler to set the number of pages.
+'' Public to provide access for the event loop. Don't call this handler manually.
+Public Sub ctrlPrinter_Begin()
+  $oPrinter.Count = 1
+End
+
+'' Event handler to execute printing.
+'' Public to provide access for the event loop. Don't call this handler manually.
+Public Sub ctrlPrinter_Draw()
+  If $oPrinter.Name = "Print to File" Then
+    ' We have to use a separate file for optimized printing to a file. Otherwise, the standard print function would overwrite the result.
+    If Right($oPrinter.OutputFile, 4) = ".svg" Then
+      $sBufferFile = Replace$($oPrinter.OutputFile, ".svg", "_buffer.svg")
+      Dim oSvgSurface As CairoSvgSurface = New CairoSvgSurface($sBufferFile, $oPrinter.PaperWidth, $oPrinter.PaperHeight)
+
+      Cairo.Begin(oSvgSurface)
+      CairoHelper.RunDisplayLists($oModel)
+      Cairo.Save()
+      Cairo.End()
+
+      oSvgSurface = Null
+      Return
+    Else If Right($oPrinter.OutputFile, 4) = ".pdf" Then
+      $sBufferFile = Replace$($oPrinter.OutputFile, ".pdf", "_buffer.pdf")
+      Dim oPdfSurface As CairoPdfSurface = New CairoPdfSurface($sBufferFile, $oPrinter.PaperWidth, $oPrinter.PaperHeight)
+
+      Cairo.Begin(oPdfSurface)
+      CairoHelper.RunDisplayLists($oModel)
+      Cairo.Save()
+      Cairo.End()
+
+      oPdfSurface = Null
+      Return
+    Endif
+  Endif
+
+  Paint.DrawImage($oImage, 0, 0)
+End

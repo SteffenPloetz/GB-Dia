@@ -1,0 +1,422 @@
+' Gambas class file
+
+' ###############################################
+' BEGIN Main-form functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, setup and clean
+' -----------------------------------------------
+
+Private $oPaperSize As Point
+
+Private $fZoom As Float
+
+Public Sub Form_Open()
+  $oUndoRedoBuffer = New UndoRedoBuffer
+  $oPaperSize = Point(2970, 2100)
+
+  CtrlPictureBox$Initialize()
+
+  ' --- Initialize controls and associated fields
+  crtlInPlaceTextArea.Expand = False
+  crtlInPlaceTextArea.Ignore = True
+  crtlInPlaceTextArea.Border = True
+  crtlInPlaceTextArea.Hide()
+
+  ctrlMenuTabStrip.Index = 1
+  ctlZoomSlider.Value = 100
+  $fZoom = 1.0
+End
+
+Public Sub Form_Close()
+  If $oCtrlPictureBox$Model.Dirty = False Then Return
+
+  Dim sQuestion As String = ("There are unsaved changes.\nDo you really want to exit and lose the changes?")
+  Dim sQuestionButton1 As String = ("Yes")
+  Dim sQuestionButton2 As String = ("No")
+  Dim iButtonIndex As Integer = Message.Question(sQuestion, sQuestionButton1, sQuestionButton2)
+
+  If iButtonIndex <> 1 Then
+    Stop Event
+
+    Return
+  End If
+  CtrlPictureBox$Clear()
+End
+
+' -----------------------------------------------
+' END Declarations, setup and clean
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Event-handler implementation
+' -----------------------------------------------
+
+'' Handles the click event for the **FileOpen** button.
+Public Sub btnFileOpen_Click()
+  If $oCtrlPictureBox$Model.Dirty = True Then
+    Dim sQuestion As String = ("There are unsaved changes.\nDo you really want to load a new diagram and lose the changes?")
+    Dim sQuestionButton1 As String = ("Yes")
+    Dim sQuestionButton2 As String = ("No")
+    Dim iButtonIndex As Integer = Message.Question(sQuestion, sQuestionButton1, sQuestionButton2)
+
+    If iButtonIndex <> 1 Then Return
+  Endif
+
+  Dim sLastSelectedPath As String
+
+  If FFileChooser.OpenSigleFileModal("*.bpmn", "BPMN files") = True Then
+    sLastSelectedPath = FFileChooser.LastSelectedPath()
+  Else
+    Return
+  Endif
+
+  Dim oFlowModel As FlowModel = New FlowModel
+
+  Dim sResultMessages As String = BPMNImporter.ReadBPMN(oFlowModel, sLastSelectedPath)
+  If sResultMessages <> "" Then
+    Logger.LogToFile("Error", "Open BPMN File", Replace$(sResultMessages, "\n", "; "))
+
+    If ctrlLogTextArea.Text <> "" Then
+      ctrlLogTextArea.Text &= "\n"
+    Endif
+    ctrlLogTextArea.Text &= sResultMessages
+  Endif
+
+  $oCtrlPictureBox$Model = oFlowModel
+  Draw(ctrlPictureBox.Image)
+  ctrlPictureBox.Refresh
+End
+
+'' Handles the click event for the **Exit** button.
+Public Sub btnExit_Click()
+  Me.Close()
+End
+
+'' Handles the click event for the **Undo** button.
+Public Sub btnUndo_Click()
+  If $oUndoRedoBuffer.CanUndo Then
+    If $oUndoRedoBuffer.Undo() Then
+      Draw(ctrlPictureBox.Image)
+      ctrlPictureBox.Refresh
+    Endif
+  Endif
+
+  btnUndo.Enabled = $oUndoRedoBuffer.CanUndo
+  btnRedo.Enabled = $oUndoRedoBuffer.CanRedo
+End
+
+'' Handles the click event for the **Redo** button.
+Public Sub btnRedo_Click()
+  If $oUndoRedoBuffer.CanRedo Then
+    If $oUndoRedoBuffer.Redo() Then
+      Draw(ctrlPictureBox.Image)
+      ctrlPictureBox.Refresh
+    Endif
+  Endif
+
+  btnUndo.Enabled = $oUndoRedoBuffer.CanUndo
+  btnRedo.Enabled = $oUndoRedoBuffer.CanRedo
+End
+
+'' Handles the change event for the **ZoomSlider** button.
+Public Sub ctlZoomSlider_Change()
+  ctlZoomLabel.Text = "Zoom: " & ctlZoomSlider.Value & "%"
+  $fZoom = ctlZoomSlider.Value / 100.0
+  Draw(ctrlPictureBox.Image)
+  ctrlPictureBox.Refresh()
+End
+
+' -----------------------------------------------
+' END Event-handler implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+Public Sub Draw(hImage As Image, Optional bGeometryHasChanged As Boolean = True)
+  hImage.Fill(Color.White)
+  Cairo.Begin(hImage)
+  Cairo.LineCap = Cairo.LineCapRound
+  Cairo.LineJoin = Cairo.LineJoinRound
+
+  CairoHelper.RunDisplayLists($oCtrlPictureBox$Model.Diagram, bGeometryHasChanged, $fZoom)
+
+  Cairo.End()
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Main-form functionality
+' ###############################################
+
+Private $oCtrlPictureBox$ViewportSize As Point
+
+Private $oCtrlPictureBox$Model As FlowModel
+
+Private $oUndoRedoBuffer As UndoRedoBuffer
+
+Private $oEditingElement As DiagramElement
+
+Private Sub CtrlPictureBox$Initialize()
+  ' Initialize control properties
+  $oCtrlPictureBox$ViewportSize = Point(800, 600)
+  ctrlPictureBox.Image = New Image($oCtrlPictureBox$ViewportSize.X, $oCtrlPictureBox$ViewportSize.Y, Color.White, Image.Standard)
+
+  ' --- Initialize diagram and some sample shapes.
+  Dim fTopOffsetY As Float = 50
+  Dim fDefaultToTinyOffsetX As Float = (ShapeStencil.DefaultShapeSize.X - ShapeStencil.TinyShapeSize.X) / 2
+  Dim fDefaultToTinyOffsetY As Float = (ShapeStencil.DefaultShapeSize.Y - ShapeStencil.TinyShapeSize.Y) / 2
+  Dim fDefaultToSmallOffsetY As Float = (ShapeStencil.DefaultShapeSize.Y - ShapeStencil.SmallShapeSize.Y) / 2
+  Dim fDefaultToCenterOffsetY As Float = ShapeStencil.DefaultShapeSize.Y / 2
+  Dim fNextShapeOffset As Float = 70
+  Dim fCurrentX As Float = 50
+
+  $oCtrlPictureBox$Model = New FlowModel
+
+  Dim oShape As FlowShape = New FlowShape(fCurrentX, fTopOffsetY + fDefaultToTinyOffsetY, ShapeStencil.TinyShapeSize.X, ShapeStencil.TinyShapeSize.Y, ShapeStencil.StartEvent)
+  oShape.Name = "Start"
+  oShape.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+  oShape = New FlowShape(fCurrentX + ShapeStencil.TinyShapeSize.X + fNextShapeOffset, fTopOffsetY, ShapeStencil.DefaultShapeSize.X, ShapeStencil.DefaultShapeSize.Y, ShapeStencil.Task)
+  oShape.Name = "Welcome to\nGB Dia, version 0.1.\nProof of Concept\nfor BPMN with\nGambas3"
+  oShape.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+
+  Dim aPointsA As PointF[] = FlowEdge.ToPointArray2(fCurrentX + ShapeStencil.TinyShapeSize.X, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + ShapeStencil.TinyShapeSize.X + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
+  Dim oEdge As FlowEdge = New FlowEdge(aPointsA)
+  oEdge.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
+  fCurrentX = fCurrentX + ShapeStencil.TinyShapeSize.X + fNextShapeOffset + ShapeStencil.DefaultShapeSize.X
+
+
+  oShape = New FlowShape(fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToSmallOffsetY, ShapeStencil.SmallShapeSize.X, ShapeStencil.SmallShapeSize.Y, ShapeStencil.ExclusiveGateway)
+  oShape.Name = "Gateway"
+  oShape.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+
+  Dim aPointsB As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
+  oEdge = New FlowEdge(aPointsB)
+  oEdge.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
+  fCurrentX = fCurrentX + ShapeStencil.SmallShapeSize.X + fNextShapeOffset
+
+
+  oShape = New FlowShape(fCurrentX + fNextShapeOffset, fTopOffsetY, ShapeStencil.DefaultShapeSize.X, ShapeStencil.DefaultShapeSize.Y, ShapeStencil.Task)
+  oShape.Name = "Go on with\nGambas3"
+  oShape.NameBounds = New RectF(oShape.Bounds.X + 4, oShape.Bounds.Y + 32, 104, 30)
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+
+  Dim aPointsC As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
+  oEdge = New FlowEdge(aPointsC)
+  oEdge.Name = "good"
+  oEdge.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
+
+  oShape = New FlowShape(fCurrentX + fNextShapeOffset + fDefaultToTinyOffsetX, 100 + fTopOffsetY + fDefaultToTinyOffsetY, ShapeStencil.TinyShapeSize.X, ShapeStencil.TinyShapeSize.Y, ShapeStencil.EndEvent)
+  oShape.Name = "Stop programming\nwith Gambas3"
+  oShape.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+
+  Dim aPointsD As PointF[] = FlowEdge.ToPointArray3(fCurrentX - ShapeStencil.SmallShapeSize.X / 2, fTopOffsetY + fDefaultToCenterOffsetY + ShapeStencil.SmallShapeSize.Y / 2, fCurrentX - ShapeStencil.SmallShapeSize.X / 2, 100 - ShapeStencil.SmallShapeSize.Y / 2 + fTopOffsetY + fDefaultToCenterOffsetY + ShapeStencil.SmallShapeSize.Y / 2, fCurrentX + fNextShapeOffset + fDefaultToTinyOffsetX, 100 + fTopOffsetY + fDefaultToCenterOffsetY)
+  oEdge = New FlowEdge(aPointsD)
+  oEdge.Name = "bad"
+  oEdge.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
+  fCurrentX = fCurrentX + ShapeStencil.DefaultShapeSize.X + fNextShapeOffset
+
+
+  oShape = New FlowShape(fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToTinyOffsetY, ShapeStencil.TinyShapeSize.X, ShapeStencil.TinyShapeSize.Y, ShapeStencil.EndEvent)
+  oShape.Name = "Gain more experience\nwith Gambas3"
+  oShape.SetNameBoundsToEditorBestBounds()
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oShape)
+
+   Dim aPointsE As PointF[] = FlowEdge.ToPointArray2(fCurrentX, fTopOffsetY + fDefaultToCenterOffsetY, fCurrentX + fNextShapeOffset, fTopOffsetY + fDefaultToCenterOffsetY)
+  oEdge = New FlowEdge(aPointsE)
+  $oCtrlPictureBox$Model.Diagram.DiagramElements.Push(oEdge)
+End
+
+Private Sub CtrlPictureBox$Clear()
+  $oEditingElement = Null
+End
+
+Public Sub ctrlPictureBox_Arrange()
+  If $oCtrlPictureBox$ViewportSize.X = ctrlPictureBox.Width And If $oCtrlPictureBox$ViewportSize.Y = ctrlPictureBox.Height Then Return 
+
+  $oCtrlPictureBox$ViewportSize.X = ctrlPictureBox.Width
+  $oCtrlPictureBox$ViewportSize.Y = ctrlPictureBox.Height
+
+  Dim hImage As Image = New Image($oCtrlPictureBox$ViewportSize.X, $oCtrlPictureBox$ViewportSize.Y, Color.White, Image.Standard)
+  Draw(hImage)
+  ctrlPictureBox.Image = hImage
+End
+
+Public Sub ctrlPictureBox_MouseDown()
+  Dim aMousePosition As PointF = PointF(Mouse.X / $fZoom, Mouse.Y / $fZoom)
+  Dim bDirty As Boolean = False
+
+  Me.SetFocus()
+
+  If $oCtrlPictureBox$Model.Diagram <> Null Then
+    Dim oIterator As ElementListIterator = $oCtrlPictureBox$Model.Diagram.DiagramElements.Begin
+
+    While oIterator <> Null
+      Dim oElement As DiagramElement = oIterator.Data
+
+      If oElement <> Null Then
+        If oElement.HitTest(aMousePosition) = True Then 
+          If oElement.IsSelected <> True
+            bDirty = True
+          End If
+
+          oElement.IsSelected = True
+        Else If oElement.IsSelected = True Then
+          oElement.IsSelected = False
+          bDirty = True
+        Endif
+      Endif
+
+      oIterator = oIterator.Next
+    Wend
+  Endif
+
+  If bDirty = True Then
+    Draw(ctrlPictureBox.Image, False)
+    ctrlPictureBox.Refresh
+  Endif
+End
+
+Public Sub ctrlPictureBox_DblClick()
+  If $oCtrlPictureBox$Model.Diagram <> Null Then
+    Dim oShape As FlowShape
+    Dim oEdge As FlowEdge
+
+    $oEditingElement = $oCtrlPictureBox$Model.Diagram.GetFirstSelectedDiagramElement()
+
+    If $oEditingElement <> Null Then
+      Dim oBounds As RectF = $oEditingElement.Bounds
+      If $oEditingElement.IsShape Then
+        oShape = $oEditingElement
+        oBounds = oShape.NameBoundsToEditorBestBounds
+      Else If $oEditingElement.IsEdge Then
+        oEdge = $oEditingElement
+        oBounds = oEdge.NameBoundsToEditorBestBounds
+      Endif
+
+      crtlInPlaceTextArea.X = oBounds.X * $fZoom + ctrlPictureBox.Left
+      crtlInPlaceTextArea.Y = (oBounds.Y - 5) * $fZoom + ctrlPictureBox.Top
+      crtlInPlaceTextArea.W = (oBounds.W + 2) * $fZoom
+      crtlInPlaceTextArea.H = (oBounds.H + 7) * $fZoom
+
+      If $oEditingElement.IsShape Then 
+        oShape = $oEditingElement
+        crtlInPlaceTextArea.Text = oShape.Name
+      Else If $oEditingElement.IsEdge Then
+        oEdge = $oEditingElement
+        crtlInPlaceTextArea.Text = oEdge.Name
+      Endif
+
+      crtlInPlaceTextArea.Font.Size = (ShapeStencil.DefaultFontSize - 3) * $fZoom
+      crtlInPlaceTextArea.Show()
+      crtlInPlaceTextArea.SetFocus()
+    Else
+      crtlInPlaceTextArea.Hide()
+    Endif
+  Endif
+End
+
+Public Sub crtlInPlaceTextArea_LostFocus()
+  If $oEditingElement <> Null Then
+    Dim oAction As SetNameAction = New SetNameAction("Set name", True)
+
+    If $oEditingElement.IsShape Then 
+      Dim oShape As FlowShape = $oEditingElement
+      Dim oEditorBestBoundsForShape As RectF = oShape.NameBoundsToEditorBestBounds
+
+      oAction.OldBounds = oShape.NameBounds
+      oAction.OldText = oShape.Name
+      oAction.ApplyTo = oShape
+
+      Cairo.Begin(ctrlPictureBox.Image)
+      Dim oOldNameSizeForShape As PointF = CairoHelper.TextExtents(oShape.Name, oShape.Stencil.DefaultFontFace, oShape.Stencil.DefaultFontSize)
+      Dim oNewNameSizeForShape As PointF = CairoHelper.TextExtents(crtlInPlaceTextArea.Text, oShape.Stencil.DefaultFontFace, oShape.Stencil.DefaultFontSize)
+      Cairo.End()
+
+      ' Verticall alignment: Centered for in-shape / Top for out-of-shape.
+      Dim oShapeBounds As RectF = oShape.Bounds
+      If oShapeBounds.Contains(oEditorBestBoundsForShape.X, oEditorBestBoundsForShape.Y) And If oShapeBounds.Contains(oEditorBestBoundsForShape.Right, oEditorBestBoundsForShape.Bottom) Then
+        oEditorBestBoundsForShape.Y = oEditorBestBoundsForShape.Y + (oEditorBestBoundsForShape.H - oNewNameSizeForShape.Y) / 2
+      Else
+        oEditorBestBoundsForShape.Y = oShape.NameBounds.Y
+      Endif
+      ' Horizontal alignment: Keep offset.
+      Dim newOffsetShapeX As Float = oEditorBestBoundsForShape.X + oEditorBestBoundsForShape.W / 2
+      Dim oldOffsetShapeX As Float = oShape.NameBounds.X + oShape.NameBounds.W / 2
+      oEditorBestBoundsForShape.X = oEditorBestBoundsForShape.X + oldOffsetShapeX - newOffsetShapeX
+      ' Size: We provide full width and required height.
+      oEditorBestBoundsForShape.Height = oNewNameSizeForShape.Y
+
+      oAction.NewBounds = oEditorBestBoundsForShape
+      oAction.NewText = crtlInPlaceTextArea.Text
+    Else If $oEditingElement.IsEdge Then
+      Dim oEdge As FlowEdge = $oEditingElement
+      Dim oNewBoundsForEdge As RectF = oEdge.NameBoundsToEditorBestBounds
+
+      oAction.OldBounds = oEdge.NameBounds
+      oAction.OldText = oEdge.Name
+      oAction.ApplyTo = oEdge
+
+      Cairo.Begin(ctrlPictureBox.Image)
+      Dim oOldSizeForEdge As PointF = CairoHelper.TextExtents(oEdge.Name, oShape.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
+      Dim oNewSizeForEdge As PointF = CairoHelper.TextExtents(crtlInPlaceTextArea.Text, oShape.Stencil.DefaultFontFace, oEdge.Stencil.DefaultFontSize)
+      Cairo.End()
+
+      ' Verticall alignment: Top stays unchanged.
+      ' Horizontal alignment: Keep offset.
+      Dim newOffsetEdgeX As Float = oNewBoundsForEdge.X + oNewBoundsForEdge.W / 2
+      Dim oldOffsetEdgeX As Float = oEdge.NameBounds.X + oEdge.NameBounds.W / 2
+      oNewBoundsForEdge.X = oNewBoundsForEdge.X + oldOffsetEdgeX - newOffsetEdgeX
+      ' Size: We provide full width and required height.
+      oNewBoundsForEdge.Height = oNewSizeForEdge.Y
+
+      oAction.NewBounds = oNewBoundsForEdge
+      oAction.NewText = crtlInPlaceTextArea.Text
+    Endif
+
+    crtlInPlaceTextArea.Hide()
+
+
+    If oAction.OldText <> oAction.NewText Then
+      oAction.Do()
+      $oUndoRedoBuffer.AddUndoAction(oAction)
+      $oCtrlPictureBox$Model.Dirty = True
+
+      Draw(ctrlPictureBox.Image, False)
+    Else
+      Draw(ctrlPictureBox.Image)
+    Endif
+    ctrlPictureBox.Refresh
+
+    btnUndo.Enabled = $oUndoRedoBuffer.CanUndo
+    btnRedo.Enabled = $oUndoRedoBuffer.CanRedo
+  Endif
+End
+
+Public Sub btnPrint_Click()
+  Dim printHelper As PrintHelper = New PrintHelper
+  printHelper.Print(ctrlPictureBox.Image, $oCtrlPictureBox$Model.Diagram)
+  printHelper = Null
+End
+
+Public Sub btnAbout_Click()
+  Dim sText1 As String = ("GB Dia, version 0.1\n\nThis is 'GB Dia', a Gambas based diagram creation program for GNU/Linux.\n\n")
+  Dim sText2 As String = ("Version 0.1 is not yet productive. It is just a proof of concept!")
+  Dim sText3 As String = ("This includes:\n- the GTK3 integration / user interface experience\n- Cairo integration / double buffering / drawing speed\n- printing capabilities\n- ...")
+
+  Message.Info(sText1 & sText2 & sText3, "OK")
+End

@@ -1,0 +1,120 @@
+' Gambas class file
+
+''' This class provides the possible operation types of the touring machine and the information needed for one single operation in the touring machine.
+
+' ###############################################
+' BEGIN Touring operation functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This operation type represents: No operation.
+Static Public Retain As Integer = 0
+
+'' This operation type represents: Multiply current value with stretch value.
+Static Public Stretch As Integer = 1
+
+
+'' This operation type represents: Retain the current value and add it with next value, that retains as it is.
+Static Public RetainAndAddWithRetained As Integer = 2
+
+'' This operation type represents: Retain the current value and substract the next value, that retains as it is.
+Static Public RetainAndSubtractWithRetained As Integer = 3
+
+'' This operation type represents: Retain the current value and multiply it with next value, that retains as it is.
+Static Public RetainAndMultiplyWithRetained As Integer = 4
+
+
+'' This operation type represents: Retain the current value and add it with next value, that is multiplied with stretch value.
+Static Public RetainAndAddWithStretched As Integer = 5
+
+'' This operation type represents: Retain the current value and substract the next value, that is multiplied with stretch value.
+Static Public RetainAndSubtractWithStretched As Integer = 6
+
+'' This operation type represents: Retain the current value and multiply it with next value, that is multiplied with stretch value.
+Static Public RetainAndMultiplyWithStretched As Integer = 7
+
+
+'' This operation type represents: Stretch the current value and add it with next value, that retains as it is.
+Static Public StretchAndAddWithRetained As Integer = 8
+
+'' This operation type represents: Stretch the current value and substract the with next value, that retains as it is.
+Static Public StretchAndSubtractWithRetained As Integer = 9
+
+'' This operation type represents: Stretch the current value and multiply it with next value, that retains as it is.
+Static Public StretchAndMultiplyWithRetained As Integer = 10
+
+
+'' This operation type represents: Stretch the current value and add it with next value, that is multiplied with stretch value.
+Static Public StretchAndAddWithStretched As Integer = 11
+
+'' This operation type represents: Stretch the current value and substract the with next value, that is multiplied with stretch value.
+Static Public StretchAndSubtractWithStretched As Integer = 12
+
+'' This operation type represents: Stretch the current value and multiply it with next value, that is multiplied with stretch value.
+Static Public StretchAndMultiplyWithStretched As Integer = 13
+
+
+'' Private - no description.
+Private $iOperand0Replacement As Integer
+
+'' Private - no description.
+Private $iOperation As Integer
+
+'' Private - no description.
+Private $iOperand1Replacement As Integer
+
+
+'' This property gets the operand replacement of the first operand.
+Property Read Operand0Replacement As Integer
+
+'' This property gets the type of operation for this (actual) touring operation.
+Property Read Operation As Integer
+
+'' This property gets the operand replacement of the second operand.
+Property Read Operand1Replacement As Integer
+
+
+'' Constructs a new touring operation.
+''
+'' The **iOperand0Replacement** defines the operand replacement of the first operand.
+'' The **iOperation** defines whether the type of operation for this (actual) touring operation.
+'' The **iOperand1Replacement** defines the operand replacement of the second operand.
+Public Sub _new(iOperand0Replacement As Integer, iOperation As Integer, iOperand1Replacement As Integer)
+  $iOperand0Replacement = iOperand0Replacement
+  $iOperation = iOperation
+  $iOperand1Replacement = iOperand1Replacement
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Operand0Replacement_Read() As Integer
+  Return $iOperand0Replacement
+End
+
+'' Private - no description.
+Private Function Operation_Read() As Integer
+  Return $iOperation
+End
+
+'' Private - no description.
+Private Function Operand1Replacement_Read() As Integer
+  Return $iOperand1Replacement
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Touring operation functionality
+' ###############################################

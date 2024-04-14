@@ -1,0 +1,89 @@
+' Gambas class file
+
+''' This class is the base class for for all application-specific actions, that should support the undo/redo functionality.
+''' It has been introduced to have a common base, that can be stored in **ElementList** double-linked list.
+
+Export
+
+' ###############################################
+' BEGIN Undo redo action functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Provides the user-friendly display name of this action.
+Property Read Name As String
+
+'' Provides the flag, determinimg whether the application of this action needs a redraw.
+Property Read NeedsRedraw As Boolean
+
+
+' Stores the user-friendly display name of this action.
+Private $sName As String
+
+' Stores the flag, determinimg whether the application of this action needs a redraw.
+Private $bNeedsRedraw As Boolean
+
+'' Creates a new instance of this class.
+''
+'' The **sName** defines the name of the action. It might be displayed.
+'' The **bNeedsRedraw** defines whether the application of this action needs a redraw.
+Public Sub _new(Optional sName As String = "??", Optional bNeedsRedraw As Boolean = False)
+  $sName = sName
+  $bNeedsRedraw = bNeedsRedraw
+End
+
+'' Destroys the current instance of this class.
+Public Sub _free()
+  $sName = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+' This method implements a property.
+Private Function Name_Read() As String
+  Return $sName
+End
+
+' This method implements a property.
+Private Function NeedsRedraw_Read() As Boolean
+  Return $bNeedsRedraw
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' This method is hidden.
+Public Sub _SetName(sName As String)
+  $sName = sName
+End
+
+'' This is to be overridden by any derived class.
+Public Sub Do()
+  ' Intentionally left blank.
+End
+
+'' This is to be overridden by any derived class.
+Public Sub Undo()
+  ' Intentionally left blank.
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+' ###############################################
+' END Undo redo action functionality
+' ###############################################

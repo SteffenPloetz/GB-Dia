@@ -1,0 +1,335 @@
+' Gambas class file
+
+''' This class represents the visible part of a model the edge within a flow.
+
+Export
+Inherits LabeledEdge
+
+' ###############################################
+' BEGIN Flow edge functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Gets the interpolation points.
+Property Read Points As PointF[]
+
+'' Gets the bounding box of this diagram element. Override base class property.
+Property Read Bounds As RectF
+
+'' Gets or sets the invisible part of a model.
+Property Sequence As ModelSequence
+
+'' Gets or sets the display name.
+Property Name As String
+
+'' Gets or sete the bounding box of the name.
+Property NameBounds As RectF
+
+'' Gets the bounding box of the name, based on the typical available size.
+Property Read NameBoundsToEditorBestBounds As RectF
+
+
+' Store the interpolation points.
+Private $aPoints As PointF[]
+
+' Store the associated model layer.
+Private $oSequence As ModelSequence
+
+' Store the bounding box of the name.
+Private $oLabel As ElementLabel
+
+
+'' Constructs a new flow edge.
+'
+'' The **x0Value** and **x0Value** define the first interpolation point.
+'' The **x1Value** and **x1Value** define the last interpolation point.
+Public Sub _new(wayPoints As PointF[])
+  $aPoints = wayPoints
+
+  $oSequence = New ModelSequence
+  $oLabel = New ElementLabel
+  $oLabel.SwitchToDiagramElement()
+End
+
+'' Destructs the (actual) flow edge.
+Public Sub _free()
+  Clear()
+
+  $oSequence = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description. Overrides the base class property.
+Private Function Points_Read() As PointF[]
+  Return $aPoints
+End
+
+'' Private - no description. Overrides the base class property.
+Private Function Bounds_Read() As RectF
+  Dim fMinX As Float = 0
+  Dim fMinY As Float = 0
+  Dim fMaxX As Float = 0
+  Dim fMaxY As Float = 0
+
+  If $aPoints <> Null Then
+    fMinX = $aPoints[0].X
+    fMinY = $aPoints[0].Y
+    fMaxX = $aPoints[0].X
+    fMaxY = $aPoints[0].Y
+
+    For Each aPoint As PointF In $aPoints
+      If fMinX > aPoint.X Then
+        fMinX = aPoint.X
+      Else If fMaxX < aPoint.X Then
+        fMaxX = aPoint.X
+      Endif
+
+      If fMinY > aPoint.Y Then
+        fMinY = aPoint.Y
+      Else If fMaxY < aPoint.Y Then
+        fMaxY = aPoint.Y
+      Endif
+    Next
+  Endif
+
+  Return New RectF(fMinX, fMinY, fMaxX, fMaxY)
+End
+
+'' Private - no description.
+Private Function Sequence_Read() As ModelSequence
+  Return $oSequence
+End
+
+'' Private - no description.
+Private Sub Sequence_Write(oSequence As ModelSequence)
+  $oSequence = oSequence
+End
+
+'' Private - no description.
+Private Function Name_Read() As String
+  If $oSequence <> Null Then
+    Return $oSequence.Name
+  Endif
+
+  Return ""
+End
+
+'' Private - no description.
+Private Sub Name_Write(sName As String)
+  If $oSequence <> Null Then
+    $oSequence.Name = sName
+  Endif
+End
+
+'' Private - no description.
+Private Function NameBounds_Read() As RectF
+  Return $oLabel.Bounds
+End
+
+'' Private - no description.
+Private Sub NameBounds_Write(oBunds As RectF)
+  $oLabel._SetBounds(oBunds)
+End
+
+'' Calculates the bounding box of the name, based on the typical available size.
+''
+'' Returns: The bounding box of the name, based on the typical available size.
+Private Function NameBoundsToEditorBestBounds_Read() As RectF
+  Dim oPosition As PointF = PointF(10, 10)
+  Dim oBounds As RectF = New RectF
+
+  If $aPoints <> Null Then
+    If $aPoints.Length <= 2 Then
+      oPosition.X = $aPoints[0].X
+      oPosition.Y = $aPoints[0].Y
+
+      oBounds.X = oPosition.X + 8
+      oBounds.Y = oPosition.Y + 8
+      oBounds.W = 70
+      oBounds.H = 50
+    Else
+      oPosition.X = ($aPoints[$aPoints.Length / 2].X + $aPoints[$aPoints.Length / 2 + 1].X) / 2
+      oPosition.Y = ($aPoints[$aPoints.Length / 2].Y + $aPoints[$aPoints.Length / 2 + 1].Y) / 2
+
+      oBounds.X = oPosition.X - 35
+      oBounds.Y = oPosition.Y + 8
+      oBounds.W = 70
+      oBounds.H = 50
+    Endif
+  Else
+    oBounds.X = 50 + 8
+    oBounds.Y = 50 + 8
+    oBounds.W = 70
+    oBounds.H = 50
+  Endif
+
+  Return oBounds
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Converts four float values to a point array of two points.
+''
+'' The **fX0** and **fY0** define the coordinates of the first point.
+'' The **fX1** and **fY1** define the coordinates of the second point.
+Static Public Function ToPointArray2(fX0 As Float, fY0 As Float, fX1 As Float, fY1 As Float) As PointF[]
+  Dim aPoint0 As PointF = New PointF(fX0, fY0)
+  Dim aPoint1 As PointF = New PointF(fX1, fY1)
+
+  Dim oPoints As PointF[] = [aPoint0, aPoint1]
+  Return oPoints
+End
+
+'' Converts four float values to a point array of two points.
+''
+'' The **fX0** and **fY0** define the coordinates of the first point.
+'' The **fX1** and **fY1** define the coordinates of the second point.
+Static Public Function ToPointArray3(fX0 As Float, fY0 As Float, fX1 As Float, fY1 As Float, fX2 As Float, fY2 As Float) As PointF[]
+  Dim aPoint0 As PointF = New PointF(fX0, fY0)
+  Dim aPoint1 As PointF = New PointF(fX1, fY1)
+  Dim aPoint2 As PointF = New PointF(fX2, fY2)
+
+  Dim oPoints As PointF[] = [aPoint0, aPoint1, aPoint2]
+  Return oPoints
+End
+
+ 
+'' Clears the point list.
+Public Sub Clear()
+  For iIndex As Integer = 0 To $aPoints.Length - 1
+    $aPoints[iIndex] = Null
+  Next
+
+  $aPoints = Null
+End
+
+'' Provides the rendering instructions to draw the shape (normalized / without zoom).
+''
+'' The **bDirty** defines whether the buffered calculation can be used or the buffered calculation is dirty.
+Public Function RenderingInstructions(bDirty As Boolean) As RenderingInstruction[]
+  Dim iNameRenderingInstructions As Integer = 0
+  If Me.Name <> "" Then
+    iNameRenderingInstructions = 2
+  Endif
+
+  Dim aRenderingPrimitives As RenderingInstruction[] = New RenderingInstruction[4 + iNameRenderingInstructions]
+
+  aRenderingPrimitives[0] = RenderingInstruction.CreateSolidColor(Color.Black)
+  aRenderingPrimitives[1] = RenderingInstruction.CreateStrokeWidt(1.5)
+  If $aPoints.Length = 0 Then
+    aRenderingPrimitives[0] = RenderingInstruction.CreateSolidColor(Color.Red)
+  Else If $aPoints.Length = 1 Then
+    aRenderingPrimitives[2] = RenderingInstruction.CreateSolidColor(Color.Black)
+  Else If $aPoints.Length = 2 Then
+    aRenderingPrimitives[2] = RenderingInstruction.CreateStrait($aPoints[0].X, $aPoints[0].Y, $aPoints[1].X, $aPoints[1].Y)
+  Else
+    aRenderingPrimitives[2] = RenderingInstruction.CreatePolygon($aPoints, False, False)
+  End If
+
+  
+  If $aPoints.Length > 1 Then
+    aRenderingPrimitives[3] = RenderingInstruction.CreateArrowHead($aPoints[$aPoints.Length - 2], $aPoints[$aPoints.Length - 1], True, True)
+  Endif
+
+  If Me.Name <> "" Then
+    Dim oLabelBounds As RectF = Me.NameBounds
+
+    aRenderingPrimitives[4] = RenderingInstruction.CreateFont(ShapeStencil.DefaultFontFace, ShapeStencil.DefaultFontSize, Color.Black)
+    aRenderingPrimitives[5] = RenderingInstruction.CreateTextBlock(Me.Name, ShapeStencil.DefaultFontSize, PointF(oLabelBounds.X, oLabelBounds.Y), PointF(oLabelBounds.W, oLabelBounds.H), 0.5)
+  Endif
+
+  Return aRenderingPrimitives
+End
+
+'' Provides the rendering instructions to draw the selection hiliting of the edge (normalized / without zoom).
+''
+'' The **bDirty** defines whether the buffered calculation can be used or the buffered calculation is dirty.
+Public Function HilightedRenderingInstructions(bDirty As Boolean) As RenderingInstruction[]
+  Dim aRenderingPrimitives As RenderingInstruction[] = New RenderingInstruction[3]
+
+  aRenderingPrimitives[0] = RenderingInstruction.CreateSolidColor(Color.Orange)
+  aRenderingPrimitives[1] = RenderingInstruction.CreateStrokeWidt(7)
+  If $aPoints.Length = 0 Then
+    ' Intentionally left blank
+  Else If $aPoints.Length = 1 Then
+    ' Intentionally left blank
+  Else If $aPoints.Length = 2 Then
+    aRenderingPrimitives[2] = RenderingInstruction.CreateStrait($aPoints[0].X, $aPoints[0].Y, $aPoints[1].X, $aPoints[1].Y)
+  Else
+    aRenderingPrimitives[2] = RenderingInstruction.CreatePolygon($aPoints)
+  End If
+
+  Return aRenderingPrimitives
+End
+
+'' Performs a hit test. Overrides the base class method.
+''
+'' The **pointValue** defines the coordinate to perform the hit test for.
+'' Returns: True on hit, or false otherwise.
+Public Function HitTest(pointValue As PointF) As Boolean
+  Dim fEpsilon As Float = 5 
+
+  If $aPoints <> Null Then
+    For iIndex As Integer = 1 To $aPoints.Length - 1
+      If $aPoints[iIndex - 1].X < $aPoints[iIndex].X Then
+        If $aPoints[iIndex - 1].X - fEpsilon < pointValue.X And If $aPoints[iIndex].X + fEpsilon > pointValue.X Then
+          If $aPoints[iIndex - 1].Y < $aPoints[iIndex].Y Then
+            If $aPoints[iIndex - 1].Y - fEpsilon < pointValue.Y And If $aPoints[iIndex].Y + fEpsilon > pointValue.Y Then
+              Return True
+            Endif
+          Else
+            If $aPoints[iIndex - 1].Y + fEpsilon > pointValue.Y And If $aPoints[iIndex].Y - fEpsilon < pointValue.Y Then
+              Return True
+            Endif
+          Endif
+        Endif
+      Else
+        If $aPoints[iIndex - 1].X + fEpsilon > pointValue.X And If $aPoints[iIndex].X - fEpsilon < pointValue.X Then
+          If $aPoints[iIndex - 1].Y < $aPoints[iIndex].Y Then
+            If $aPoints[iIndex - 1].Y - fEpsilon < pointValue.Y And If $aPoints[iIndex].Y + fEpsilon > pointValue.Y Then
+              Return True
+            Endif
+          Else
+            If $aPoints[iIndex - 1].Y + fEpsilon > pointValue.Y And If $aPoints[iIndex].Y - fEpsilon < pointValue.Y Then
+              Return True
+            Endif
+          Endif
+        Endif
+      Endif
+    Next
+  Endif
+
+  Return False
+End
+
+'' Sets the boundig box for the name based on the available/reserved space.
+Public Sub SetNameBoundsToEditorBestBounds()
+  Dim oBounds As RectF = NameBoundsToEditorBestBounds_Read()
+
+  $oLabel._SetBounds(oBounds)
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN Flow edge functionality
+' ###############################################
+

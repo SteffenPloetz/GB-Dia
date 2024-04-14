@@ -1,0 +1,284 @@
+' Gambas class file
+
+''' This class provides static methods to support rendering with Cairo.
+
+Create Private
+
+'' Draws an outlined rectangle, with or without rounded corners.
+''
+'' The **fX** and **fY** arguments define the top left corner of the bounding box of the rectangle.
+'' The **fWidth** and **fHeight** arguments define the width and height of the bounding box of the rectangle.
+'' The **fR** argument defines the radius.
+'' The **fZoom** arguments defines the zoom scale.
+Static Public Sub RoundedRectangle(fX As Float, fY As Float, fWidth As Float, fHeight As Float, fR As Float, fZoom As Float)
+  If fZoom <> 1.0 Then 
+    fX = fX * fZoom
+    fY = fY * fZoom
+    fWidth = fWidth * fZoom
+    fHeight = fHeight * fZoom
+    fR = fR * fZoom
+  Endif
+
+  ' Cairo.MoveTo(x + fWidth, y + fHeight + r)
+  Cairo.Arc(fX + fWidth - fR, fY + fHeight - fR, fR, 0, Pi / 2)
+  Cairo.LineTo(fX + fR, fY + fHeight)
+  Cairo.Arc(fX + fR, fY + fHeight - fR, fR, Pi / 2, Pi)
+  Cairo.LineTo(fX, fY + fR)
+  Cairo.Arc(fX + fR, fY + fR, fR, Pi, Pi + Pi / 2)
+  Cairo.LineTo(fX + fWidth - fR, fY)
+  Cairo.Arc(fX + fWidth - fR, fY + fR, fR, Pi + Pi / 2, 2 * Pi)
+  Cairo.ClosePath()
+End
+
+'' Draws an outlined circle.
+''
+'' The **fCX** and **fCY** arguments define the center point of the circle.
+'' The **fR** argument defines the radius.
+'' The **fZoom** arguments defines the zoom scale.
+Static Public Sub Circle(fCX As Float, fCY As Float, fR As Float, fZoom As Float)
+  If fZoom <> 1.0 Then
+    ' Cairo.MoveTo((fCX + fR) * fZoom, fCY * fZoom)
+    Cairo.Arc(fCX * fZoom, fCY * fZoom, fR * fZoom, 0, 2 * Pi)
+    Cairo.ClosePath()
+  Else
+    ' Cairo.MoveTo(fCX + fR, fCY)
+    Cairo.Arc(fCX, fCY, fR, 0, 2 * Pi)
+    Cairo.ClosePath()
+  End If
+End
+
+'' Draws an outlined circle.
+''
+'' The **aPoints** argument defines the interpolation points of the polygon.
+'' The **r** argument defines the radius. 
+'' The **fZoom** arguments defines the zoom scale.
+'' The **bClosed** argument defines whether to close the path.
+Static Public Sub Polygon(aPoints As PointF[], fZoom As Float, Optional bClosed As Boolean = True)
+  If fZoom <> 1.0 Then
+    For iIndex As Integer = 0 To aPoints.Length - 1
+      If iIndex = 0 Then
+        Cairo.MoveTo(aPoints[iIndex].X * fZoom, aPoints[iIndex].Y * fZoom)
+      Else
+        Cairo.LineTo(aPoints[iIndex].X * fZoom, aPoints[iIndex].Y * fZoom)
+      Endif
+    Next
+  Else
+    For iIndex As Integer = 0 To aPoints.Length - 1
+      If iIndex = 0 Then
+        Cairo.MoveTo(aPoints[iIndex].X, aPoints[iIndex].Y)
+      Else
+        Cairo.LineTo(aPoints[iIndex].X, aPoints[iIndex].Y)
+      Endif
+    Next
+  End If
+
+  If bClosed Then
+    Cairo.ClosePath()
+  End If
+End
+
+'' Calculates the text extents. Multi line text is supported.
+''
+'' The **sText** argument defines the text to calculate the extents for.
+'' The **oFontName** argument defines font name of the font tu use for measuring.
+'' The **fFontSize** argument defines font size of the font tu use for measuring.
+'' The **fScale** argument defines the scale to apply to the extents for.
+'' Returns: The text extents.
+'' Remarks: The line height is font ascent + font descent, not font size! Typically the line height is greater than the font size.
+'' Remarks: For some fonts approximately a quater font size, for some other fonts even more, up to approximately the half font size.
+Static Public Function TextExtents(sText As String, oFontName As String, fFontSize As Float, Optional fScale As Float = 1.0) As PointF
+  Dim oSize As PointF = PointF(0, 0)
+  Dim oTextExtents As CairoTextExtents
+
+  If sText = "" Then Return oSize
+  If Replace(sText, " ", "").Len = 0 Then Return oSize
+
+  Dim sTextLines As String[]
+  Dim oOldFontName As String = Cairo.Font.Name
+  Dim fOldFontSize As Float = Cairo.Font.Size
+
+  If oFontName <> oOldFontName Then Cairo.Font.Name = oFontName
+  If fFontSize <> fOldFontSize Then Cairo.Font.Size = fFontSize
+
+  Dim fLineHeight As Float = Cairo.Font.Extents.Ascent + Cairo.Font.Extents.Descent
+  Dim oTextExtent As CairoTextExtents
+
+  sText = Replace(sText, "\n\r", "\n")
+  sTextLines = Split(sText, "\n")
+
+  For iIndex As Integer = 0 To sTextLines.Length - 1
+    oTextExtents = Cairo.TextExtents(sTextLines[iIndex])
+
+    If iIndex = 0 Then
+      oSize.x = oTextExtents.Width * fScale
+      oSize.y = fLineHeight
+    Else
+      If oSize.x < oTextExtents.Width * fScale Then oSize.x = oTextExtents.Width * fScale
+      oSize.y = oSize.y + fLineHeight
+    Endif
+  Next
+
+  If oFontName <> oOldFontName Then Cairo.Font.Name = oOldFontName
+  If fFontSize <> fOldFontSize Then Cairo.Font.Size = fOldFontSize
+
+  Return oSize
+End
+
+'' Draws a text. The text is drawn in multiple lines, if '\n' character(s) specify line break positions.
+''
+'' The **sText** argument defines the text to draw. It can be a multi line text.
+'' The **fX** and **fY** arguments define the top left corner of the bounding box of the rectangle.
+'' The **fAvailableWidth** argument defines width, available for text drawing. Currently not applied, only informational.
+'' The **fAvailableHeight** argument defines height, available for text drawing. Currently not applied, only informational.
+'' The **fAlignment** arguments defines the horizontal text alinnment, applied line by line.
+'' The **fZoom** arguments defines the zoom scale.
+'' Remarks: An alignment value of 0 is equal to **left**, of 0.5 is equal to **center** and of 1 is equal to **right**.
+'' Remarks: The alignment value is truncated to the range from 0 to 1.
+Static Public Sub DrawText(sText As String, fX As Float, fY As Float, fAvailableWidth As Float, fAvailableHeight As Float, fAlignment As Float, fZoom As Float)
+  If sText = "" Then Return
+  If Replace(sText, " ", "").Len = 0 Then Return
+
+  Dim sTextLines As String[]
+  Dim fLineHeight As Float = Cairo.Font.Extents.Ascent + Cairo.Font.Extents.Descent
+  Dim oTextExtent As CairoTextExtents
+  Dim fOffsetX As Float
+
+  If fZoom <> 1.0 Then
+    fX = fX * fZoom
+    fY = fY * fZoom
+  Endif
+
+  sText = Replace(sText, "\n\r", "\n")
+  sTextLines = Split(sText, "\n")
+
+  ' DEBUG CODE
+  ' Dim oPattern As CairoPattern = Cairo.Source
+  ' Dim fLineWidth As Float = Cairo.LineWidth
+  ' Cairo.Source = Cairo.SolidPattern(0.9, 0.9, 0.9)
+  ' Cairo.Rectangle(fX, fY - 0.8 * fLineHeight, fAvailableWidth * fZoom, fAvailableHeight * fZoom)
+  ' Cairo.Stroke
+  ' Cairo.Source = oPattern
+  ' Cairo.LineWidth = fLineWidth
+
+  fAlignment = Min(1, Max(0, fAlignment))
+
+  For Each sTextLine As String In sTextLines
+    If fAlignment <> 0 Then
+      oTextExtent = Cairo.TextExtents(sTextLine)
+      fOffsetX = fAvailableWidth * fZoom - oTextExtent.Width
+      If fOffsetX < 0 Then fOffsetX = 0
+      fOffsetX = fOffsetX * (1 - fAlignment)
+    Else
+      fOffsetX = 0
+    Endif
+    Cairo.MoveTo(fX + fOffsetX, fY)
+    Cairo.DrawText(sTextLine)
+    fY = fY + fLineHeight
+  Next
+End
+
+'' Runs a diagram's display list.
+''
+'' The **oDiagram** arguments defines the diagram, that provides the display list to run.
+'' The **bGeometryHasChanged** arguments defines whwther the geometry has changed and must be re-calculated.
+'' The **fZoom** arguments defines the zoom scale.
+Static Public Sub RunDisplayLists(oDiagram As FlowDiagram, Optional bGeometryHasChanged As Boolean = True, Optional fZoom As Float = 1)
+  If oDiagram <> Null Then
+    Dim oIterator As ElementListIterator = oDiagram.DiagramElements.Begin
+
+    While oIterator <> Null
+      Dim oElement As DiagramElement = oIterator.Data
+
+      If oElement <> Null Then
+        Dim aHilightedRenderingPrimitives As RenderingInstruction[] = Null
+        Dim aDisplayList As RenderingInstruction[] = Null
+
+        If oElement.IsShape Then
+          Dim oShape As FlowShape = oElement
+
+          If oShape.IsSelected Then
+            aHilightedRenderingPrimitives = oShape.HilightedRenderingInstructions(True)
+          Endif
+          aDisplayList = oShape.RenderingInstructions(True)
+        Else
+          Dim oEdge As FlowEdge = oElement
+
+          If oEdge.IsSelected Then
+            aHilightedRenderingPrimitives = oEdge.HilightedRenderingInstructions(True)
+          Endif
+          aDisplayList = oEdge.RenderingInstructions(True)
+        Endif
+
+        If aHilightedRenderingPrimitives <> Null Then
+          CairoHelper.RunDisplayList(aHilightedRenderingPrimitives, fZoom)
+
+          For iIndex As Integer = 0 To aHilightedRenderingPrimitives.Length - 1
+            aHilightedRenderingPrimitives[iIndex] = Null
+          Next
+          aHilightedRenderingPrimitives = Null
+        Endif
+
+        If aDisplayList <> Null Then
+          CairoHelper.RunDisplayList(aDisplayList, fZoom)
+
+          For iIndex As Integer = 0 To aDisplayList.Length - 1
+            aDisplayList[iIndex] = Null
+          Next
+          aDisplayList = Null
+        Endif
+      Endif
+
+      oIterator = oIterator.Next
+    Wend
+  Endif
+End
+
+'' Runs a display list.
+''
+'' The **aDisplayList** arguments defines the display list to run.
+'' The **fZoom** arguments defines the zoom scale.
+Static Public Sub RunDisplayList(aDisplayList As RenderingInstruction[], Optional fZoom As Float = 1)
+  For Each aRenderingPrimitive As RenderingInstruction In aDisplayList
+    If aRenderingPrimitive.InstructionType = RenderingInstruction.Strait Then
+      Cairo.MoveTo(aRenderingPrimitive.GetCoordinate(0) * fZoom, aRenderingPrimitive.GetCoordinate(1) * fZoom)
+      Cairo.LineTo(aRenderingPrimitive.GetCoordinate(2) * fZoom, aRenderingPrimitive.GetCoordinate(3) * fZoom)
+      Cairo.Stroke()
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.Circle Then
+      CairoHelper.Circle(aRenderingPrimitive.GetCoordinate(0), aRenderingPrimitive.GetCoordinate(1), aRenderingPrimitive.GetCoordinate(2), fZoom)
+      Cairo.Stroke()
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.RoundedRectangle Then
+      CairoHelper.RoundedRectangle(aRenderingPrimitive.GetCoordinate(0), aRenderingPrimitive.GetCoordinate(1), aRenderingPrimitive.GetCoordinate(2), aRenderingPrimitive.GetCoordinate(3), aRenderingPrimitive.GetCoordinate(4), fZoom)
+      Cairo.Stroke()
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.Polygon Then
+      Dim points As PointF[] = New PointF[aRenderingPrimitive.CountCoordinates() / 2]
+      For iIndex As Integer = 0 To aRenderingPrimitive.CountCoordinates() - 1 Step 2
+        points[iIndex / 2] = PointF(aRenderingPrimitive.GetCoordinate(iIndex), aRenderingPrimitive.GetCoordinate(iIndex + 1))
+      Next
+      CairoHelper.Polygon(points, fZoom, aRenderingPrimitive.ClosePath)
+      If aRenderingPrimitive.FillFigure = False
+        Cairo.Stroke()
+      Else
+        Cairo.Fill
+      End If
+
+      For iIndex As Integer = 0 To points.Length - 1
+        points = Null
+      Next
+      points = Null
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.StrokeWidth Then
+      Cairo.LineWidth = aRenderingPrimitive.GetCoordinate(0) * fZoom
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.SolidColor Then
+      Cairo.Source = Cairo.ColorPattern(aRenderingPrimitive.ColorValue)
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.Font Then
+      Cairo.Font.Name = aRenderingPrimitive.Text
+      Cairo.Font.Slant = Cairo.FontSlantNormal
+      Cairo.Font.Weight = Cairo.FontWeightNormal
+      Cairo.Font.Size = aRenderingPrimitive.GetCoordinate(0) * fZoom
+      Cairo.Source = Cairo.SolidPattern(0, 0, 0)
+    Else If aRenderingPrimitive.InstructionType = RenderingInstruction.TextLine Then
+      CairoHelper.DrawText(aRenderingPrimitive.Text, aRenderingPrimitive.GetCoordinate(0), aRenderingPrimitive.GetCoordinate(1), aRenderingPrimitive.GetCoordinate(2), aRenderingPrimitive.GetCoordinate(3), aRenderingPrimitive.GetCoordinate(4), fZoom)
+      Cairo.Fill
+    Endif
+  Next
+End
+

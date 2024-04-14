@@ -1,0 +1,108 @@
+' Gambas class file
+
+''' This class represents the invisible part of a model as the base class for **FlowNode**, **SequenceFlow**, **Data** and **System**.
+''' In BPMN this is the class **FlowElement**.
+
+Export
+Inherits BaseElement
+
+' ###############################################
+' BEGIN Model element functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+' Gets or sets the associated type name.
+Property TypeName As String
+
+' Store the associated type name.
+Private $sTypeName As String
+
+' Store the attribute collection.
+Private $cAttributes As Collection
+
+
+'' Constructs a new model element.
+''
+'' The **sTypeName** defines the type name of the new model node.
+Public Sub _new(Optional sTypeName As String = "")
+  $sTypeName = sTypeName
+  $cAttributes = New Collection
+End
+
+'' Destructs the (actual) model element.
+Public Sub _free()
+  $cAttributes.Clear() ' This also decreases the reference counter of the elements.
+  $cAttributes = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function TypeName_Read() As String
+  Return $sTypeName
+End
+
+'' Private - no description.
+Private Sub TypeName_Write(sTypeName As String)
+  $sTypeName = sTypeName
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Add or set an attribute.
+''
+'' The **sName** defines the name/identity of the attribute.
+'' The **vValue** defines the value of the attribute.
+'' Returns: True if attribute has been added, or false if attribute value has been updated.
+Public Function AddOrSetAttribute(sName As String, vValue As Variant) As Boolean
+  If $cAttributes.Exist(sName) Then
+    $cAttributes[sName] = vValue
+    Return False
+  Else
+    $cAttributes.Add(vValue, sName)
+    Return True
+  Endif
+End
+
+'' Determine if the indicated attribute name/identity exists.
+''
+'' The **sName** defines the name/identity of the attribute.
+'' Returns: True if attribute exists, or false otherwise.
+Public Function Exist(sName As String) As Boolean
+  Return $cAttributes.Exist(sName)
+End
+
+'' Get the attribute value.
+''
+'' The **sName** defines the name/identity of the attribute.
+'' Returns: The attribute value on success, or null otherwise.
+Public Function TryGetValue(sName As String) As Variant
+  If $cAttributes.Exist(sName) Then
+    Return $cAttributes[sName]
+  Endif
+
+  Return Null
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Model element functionality
+' ###############################################

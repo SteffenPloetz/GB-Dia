@@ -1,0 +1,30 @@
+' Gambas class file
+
+''' This class provides a basic set of edge stencils.
+''' The edge stencils provide NO geometry.
+'''
+''' This class also implements a simple edge stencil provider.
+''' It is planned to replace it with a file-based stencil set, that enables easy extension of the edge stencil set.
+
+' ###############################################
+' BEGIN Shape stencil functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This constant identifies the type of the edge stencil as a **SequenceFlow** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessEdgeTypes** name.
+Static Public Const SequenceFlow As String = "sequenceFlow"
+
+'' This constant identifies the type of the shape stencil as a **MessageFlow** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessEdgeTypes** name.
+Static Public Const MessageFlow As String = "messageFlow"
+
+
+'' This constant defines the default font size for tect attributes.
+Static Public Const DefaultFontSize As Float = 12
+
+'' This constant defines the default font face for tect attributes.
+Static Public Const DefaultFontFace As String = "Cantarell"

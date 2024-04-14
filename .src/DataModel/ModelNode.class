@@ -1,0 +1,39 @@
+' Gambas class file
+
+''' This class represents the invisible part of a model for a **LabeledShape**.
+''' In BPMN this is the class **FlowNode**.
+
+Export
+Inherits ModelElement
+
+' ###############################################
+' BEGIN Model node functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Model node functionality
+' ###############################################

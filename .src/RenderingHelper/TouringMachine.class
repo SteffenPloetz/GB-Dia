@@ -1,0 +1,472 @@
+' Gambas class file
+
+''' This class provides a simple touring machine. The possible operations are define in the class **TouringOperation**.
+''' The operations are applied in the sequence of registration, the rule 'point calculation before line calculation' is not pplied.
+''' (This makes the touring machine simple and the calculation fast, since no recursive calls are required for implementation.)
+
+' ###############################################
+' BEGIN Extended Formula functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This property gets the number of registered operations.
+Property Read CountOperations As Integer
+
+'' This property gets the number of registered operand values.
+Property Read CountValues As Integer
+
+'' Private - no description.
+Private $aOperations As TouringOperation[]
+
+'' Private - no description.
+Private $fOperandValues As Float[]
+
+'' Private - no description.
+Private $iOperationsCount As Integer = 0
+
+'' Private - no description.
+Private $iOperandValuesCount As Integer = 0
+
+'' Constructs a new touring machine.
+''
+'' The **iOperandsCount** defines the number of operand values to register.
+'' The **fOperand0** defines the value of the first operand.
+'' The **oOperation0** defines type of the first operation.
+'' The **fOperand1** defines the value of the second operand. This operand is optional, since we have operations that require just the first operand.
+'' The **oOperation1** defines type of the second operation. This operation type is optional, since we have touring machines that require just the first operation.
+'' The **fOperand2** defines the value of the third operand. This operand is optional, since we have operations that require just the first or the first and second operand.
+'' The **oOperation2** defines type of the third operation. This operation type is optional, since we have touring machines that require just the first operation.
+'' The **fOperand3** defines the value of the fourth operand. This operand is optional, since we have operations that require just the first or the first and second operand.
+Public Sub _new(iOperandsCount As Integer, fOperand0 As Float, oOperation0 As TouringOperation, Optional fOperand1 As Float = 0.0, Optional oOperation1 As TouringOperation = Null, Optional fOperand2 As Float = 0.0, Optional oOperation2 As TouringOperation = Null, Optional fOperand3 As Float = 0.0)
+  If oOperation2 <> Null Then
+    $aOperations = New TouringOperation[3]
+    $aOperations[0] = oOperation0
+    $aOperations[1] = oOperation1
+    $aOperations[2] = oOperation2
+  Else If oOperation1 <> Null Then
+    $aOperations = New TouringOperation[2]
+    $aOperations[0] = oOperation0
+    $aOperations[1] = oOperation1
+  Else If oOperation0 <> Null Then
+    $aOperations = New TouringOperation[1]
+    $aOperations[0] = oOperation0
+  Else
+    $aOperations = Null
+  End If
+
+  If iOperandsCount > 4 Then iOperandsCount = 4
+
+  $fOperandValues = New Single[iOperandsCount]
+  $fOperandValues[0] = fOperand0
+  If iOperandsCount > 1 Then
+    $fOperandValues[1] = fOperand1
+  Endif
+  If iOperandsCount > 2 Then
+    $fOperandValues[2] = fOperand2
+  Endif
+  If iOperandsCount > 3 Then
+    $fOperandValues[3] = fOperand3
+  Endif
+End
+
+'' Destructs the (actual) touring machine.
+Public Sub _free()
+  If $aOperations <> Null Then
+    For Each oOperation As TouringOperation In $aOperations
+      oOperation = Null
+    Next
+  Endif
+  $aOperations = Null
+
+  $fOperandValues = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function CountOperations_Read() As Integer
+  $iOperationsCount
+End
+
+'' Private - no description.
+Private Function CountValues_Read() As Integer
+  $iOperandValuesCount
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Convenience helper to construct a new touring machine. The convenience is provided by the fact, that all arguments are string values and converted to their appropriate types.
+''
+'' The **sOperand0** defines the value of the 1st operand. The first operand is always multiplied with the start value. To prevent a manipulation of the start value, use the value "F1.0".
+'' The **sOperator0** defines type of the 1st operator. It can be '+', '-' or '*'. To devide, multiply with the inverse value.
+'' The **sOperand1** defines the value of the 2nd operand. This operand is optional, since we have operations that require just the first operand.
+'' The **sOperator1** defines type of the 2nd operator. This operation type is optional, since we have touring machines that require just the first operation.
+'' The **sOperand2** defines the value of the 3rd operand. This operand is optional, since we have operations that require just the first or the first and second operand.
+'' The **sOperator2** defines type of the 3rd operator. This operation type is optional, since we have touring machines that require just the first operation.
+'' The **sOperand3** defines the value of the 4th operand. This operand is optional, since we have operations that require just the first or the first and second operand.
+'' The **sOperator3** defines type of the 4th operator. This operation type is optional, since we have touring machines that require just the first operation.
+'' The **sOperand4** defines the value of the 5th operand. This operand is optional, since we have operations that require just the first or the first and second operand.
+'' Remark: The operand values can be a float value or one of the place holders 'X' for x-coordinate, 'Y' for y-coordinate, 'W' for width, 'H' for height or 'R' for radius.
+'' The operand values can have the prefix 'F' for fixed (not multiplied with the stretch value). Otherwise they are multiplied with the stretch value.
+'' An optional operand, that is not required for the operation, should be represented by an empty string.
+'' Returns: The new touring machine.
+Static Public Function Create(sOperand0 As String, Optional sOperator0 As String = "", Optional sOperand1 As String = "", Optional sOperator1 As String = "", Optional sOperand2 As String = "", Optional sOperator2 As String = "", Optional sOperand3 As String = "", Optional sOperator3 As String = "", Optional sOperand4 As String = "") As TouringMachine
+  Dim nOperand0Replacement As Integer = TouringOperandReplacement.NoReplacement
+  Dim nOperand1Replacement As Integer = TouringOperandReplacement.NoReplacement
+  Dim nOperand2Replacement As Integer = TouringOperandReplacement.NoReplacement
+  Dim nOperand3Replacement As Integer = TouringOperandReplacement.NoReplacement
+  Dim nOperand4Replacement As Integer = TouringOperandReplacement.NoReplacement
+  Dim bOperand0IsStretched As Boolean = True
+  Dim bOperand1IsStretched As Boolean = True
+  Dim bOperand2IsStretched As Boolean = True
+  Dim bOperand3IsStretched As Boolean = True
+  Dim bOperand4IsStretched As Boolean = True
+  Dim fOperand0Value As Float = 1.0
+  Dim fOperand1Value As Float = 1.0
+  Dim fOperand2Value As Float = 1.0
+  Dim fOperand3Value As Float = 1.0
+  Dim fOperand4Value As Float = 1.0
+
+  ' --- First operand.
+  fOperand0Value = EvaluateOperand(sOperand0, ByRef nOperand0Replacement, ByRef bOperand0IsStretched)
+
+  If sOperator0 = "" Then
+    Dim oOperationA As TouringOperation = New TouringOperation(nOperand0Replacement, TouringOperation.Retain, False)
+    Dim result1 As TouringMachine
+
+    result1 = New TouringMachine(1, fOperand0Value, oOperationA)
+    Return result1
+  Endif
+
+  ' --- Second operand.
+  fOperand1Value = EvaluateOperand(sOperand1, ByRef nOperand1Replacement, ByRef bOperand1IsStretched)
+
+  Dim iOperation0 As Integer = EvaluateOperator(sOperator0, nOperand0Replacement, bOperand1IsStretched)
+  If sOperator1 = "" Then
+    Dim oOperationB As TouringOperation = New TouringOperation(nOperand0Replacement, iOperation0, nOperand1Replacement)
+    Dim result2 As TouringMachine
+
+    result2 = New TouringMachine(2, fOperand0Value, oOperationB, fOperand1Value)
+    Return result2
+  Endif
+
+  ' --- Third operand.
+  fOperand2Value = EvaluateOperand(sOperand2, ByRef nOperand2Replacement, ByRef bOperand2IsStretched)
+
+  Dim iOperation1 As Integer = EvaluateOperator(sOperator1, False, bOperand2IsStretched) ' Prevent double stretching of operand1!
+  If sOperator2 = "" Then
+    Dim oOperationM As TouringOperation = New TouringOperation(nOperand0Replacement, iOperation0, nOperand1Replacement)
+    Dim oOperationN As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation1, nOperand2Replacement) ' Operand 1 is always the intermediate result!
+    Dim result3 As TouringMachine
+
+    result3 = New TouringMachine(3, fOperand0Value, oOperationM, fOperand1Value, oOperationN, fOperand2Value)
+    Return result3
+  End If
+
+  ' --- Fourth operand.
+  fOperand3Value = EvaluateOperand(sOperand3, ByRef nOperand3Replacement, ByRef bOperand3IsStretched)
+
+  Dim iOperation2 As Integer = EvaluateOperator(sOperator2, False, bOperand3IsStretched) ' Prevent double stretching of operand2!
+
+    Dim oOperationR As TouringOperation = New TouringOperation(nOperand0Replacement, iOperation0, nOperand1Replacement)
+    Dim oOperationS As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation1, nOperand2Replacement) ' Operand 1 is always the intermediate result!
+    Dim oOperationT As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation2, nOperand3Replacement) ' Operand 2 is always the intermediate result!
+    Dim result4 As TouringMachine
+
+    result4 = New TouringMachine(4, fOperand0Value, oOperationR, fOperand1Value, oOperationS, fOperand2Value, oOperationT, fOperand3Value)
+    Return result4
+
+  ' --- Fifth operand.
+  fOperand4Value = EvaluateOperand(sOperand4, ByRef nOperand4Replacement, ByRef bOperand4IsStretched)
+
+  Dim iOperation3 As Integer = EvaluateOperator(sOperator3, False, bOperand4IsStretched) ' Prevent double stretching of operand3!
+
+    Dim oOperationU As TouringOperation = New TouringOperation(nOperand0Replacement, iOperation0, nOperand1Replacement)
+    Dim oOperationV As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation1, nOperand2Replacement) ' Operand 1 is always the intermediate result!
+    Dim oOperationW As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation2, nOperand3Replacement) ' Operand 2 is always the intermediate result!
+    Dim oOperationX As TouringOperation = New TouringOperation(TouringOperandReplacement.NoReplacement, iOperation3, nOperand4Replacement) ' Operand 3 is always the intermediate result!
+    Dim result5 As TouringMachine
+
+    result5 = New TouringMachine(5, fOperand0Value, oOperationU, fOperand1Value, oOperationV, fOperand2Value, oOperationW, fOperand3Value, oOperationX, fOperand4Value)
+    Return result4
+End
+
+'' Convenience helper to determine the operand value, operand replacement by dimension and application of stretch value to the operand.
+''
+'' The **sOperand** defines the value of the operand. The value will be parsed and converted to its appropriate type.
+'' The **iOperandReplacement** (out) defines whether to replace the operand by a position or dimension.
+'' The **bOperandIsStretched** (out) defines whether to apply the stretch value to the operand. A prefix 'F' prevents the application of stretch value.
+'' Remark: The oprand accepts replacement place holder 'X' for x-coordinate, 'Y' for y-coordinate, 'W' for width, 'H' for height or 'R' for radius.
+'' Returns: The float value of the operand, or 1.0 in case the operand will be replaced by a coordinate of dimension.
+Static Private Function EvaluateOperand(sOperand As String, ByRef iOperandReplacement As Integer, ByRef bOperandIsStretched As Boolean) As Float
+  iOperandReplacement = TouringOperandReplacement.NoReplacement
+
+  If sOperand = "" Then
+    Dim sError1 As String = "TouringMachine.EvaluateOperand() - Operand to evaluate is empty."
+    If FMain.ErrorDialog Then
+      Message.Error(sError1)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError1)
+    Endif
+    Return 1.0
+  Endif
+
+  Dim sFirstCharacter As String = Left$(sOperand, 1)
+  If InStr("+-0123456789.fxywhr", sFirstCharacter, 0, gb.IgnoreCase) = 0 Then
+    Dim sError2 As String = "TouringMachine.EvaluateOperand() - Operand to evaluate contains not supported character(s)."
+    If FMain.ErrorDialog Then
+      Message.Error(sError2)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError2)
+    Endif
+    Return 1.0
+  Endif
+
+  If sFirstCharacter = "F" Or If sFirstCharacter = "f" Then
+    bOperandIsStretched = False
+    sOperand = Right$(sOperand, sOperand.Len - 1)
+  Endif
+
+  If sOperand = "X" Or If sOperand = "x" Then
+    iOperandReplacement = TouringOperandReplacement.ReplaceWithX
+    Return 1.0 ' Set any value - it will be replaced by the dimension anyway.
+  Else If sOperand = "Y" Or If sOperand = "y" Then
+    iOperandReplacement = TouringOperandReplacement.ReplaceWithY
+    Return 1.0 ' Set any value - it will be replaced by the dimension anyway.
+  Else If sOperand = "W" Or If sOperand = "w" Then
+    iOperandReplacement = TouringOperandReplacement.ReplaceWithW
+    Return 1.0 ' Set any value - it will be replaced by the dimension anyway.
+  Else If sOperand = "H" Or If sOperand = "h" Then
+    iOperandReplacement = TouringOperandReplacement.ReplaceWithH
+    Return 1.0 ' Set any value - it will be replaced by the dimension anyway.
+  Else If sOperand = "R" Or If sOperand = "r" Then
+    iOperandReplacement = TouringOperandReplacement.ReplaceWithR
+    Return 1.0 ' Set any value - it will be replaced by the dimension anyway.
+  Endif
+
+  For iCharIndex As Integer = 0 To sOperand.Len - 1
+    Dim sCharacter As String = sOperand[iCharIndex, 1]
+    If InStr("+-0123456789.", sCharacter, 0, gb.IgnoreCase) = 0 Then
+      Dim sError3 As String = "TouringMachine.EvaluateOperand() - Operand to evaluate contains not supported character(s)."
+      If FMain.ErrorDialog Then
+        Message.Error(sError3)
+      Else
+        Logger.LogToFile("Error", "Touring Machine", sError3)
+      Endif
+      Return 1.0 ' Set the least harmful fall-back.
+    End If
+  Next
+
+  Return CSingle(sOperand)
+End
+
+'' Convenience helper to determine the type of operation.
+''
+'' The **sOperator** defines the value of the operator. The value will be parsed and converted. It can be '+', '-' or '*'. To devide, multiply with the inverse value.
+'' The **bOperand1IsStretched** defines whether the first operand is stretched. To reduce complexity (number of arguments) this information is coded into the operation type.
+'' The **bOperand2IsStretched** defines whether the second operand is stretched. To reduce complexity (number of arguments) this information is coded into the operation type.
+'' Returns: The type of operation.
+Static Private Function EvaluateOperator(sOperator As String, bOperand1IsStretched As Boolean, bOperand2IsStretched As Boolean) As Integer
+  If sOperator = "" Then
+    Dim sError1 As String = "TouringMachine.EvaluateOperator() - Operator to evaluate is empty."
+    If FMain.Debug Then
+      Message.Error(sError1)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError1)
+    Endif
+    Return TouringOperation.Retain
+  Endif
+
+  If sOperator.Len > 1 Then
+    Dim sError2 As String = "TouringMachine.EvaluateOperator() - Operator has too many characters."
+    If FMain.Debug Then
+      Message.Error(sError2)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError2)
+    Endif
+    Return TouringOperation.Retain
+  Endif
+
+  If InStr("+-*", sOperator, 0, gb.IgnoreCase) = 0 Then
+    Dim sError3 As String = "TouringMachine.EvaluateOperator() - Operatorand to evaluate is of not supported character."
+    If FMain.Debug Then
+      Message.Error(sError3)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError3)
+    Endif
+    Return TouringOperation.Retain
+  End If
+
+  Dim iOperation As Integer = TouringOperation.Retain
+  If sOperator = "+" Then
+    If bOperand1IsStretched And If bOperand2IsStretched Then
+      iOperation = TouringOperation.StretchAndAddWithStretched
+    Else If bOperand1IsStretched Then
+      iOperation = TouringOperation.StretchAndAddWithRetained
+    Else If bOperand2IsStretched Then
+      iOperation = TouringOperation.RetainAndAddWithStretched
+    Else
+      iOperation = TouringOperation.RetainAndAddWithRetained
+    Endif
+  Else If sOperator = "-" Then
+    If bOperand1IsStretched And If bOperand2IsStretched Then
+      iOperation = TouringOperation.StretchAndSubtractWithStretched
+    Else If bOperand1IsStretched Then
+      iOperation = TouringOperation.StretchAndSubtractWithRetained
+    Else If bOperand2IsStretched Then
+      iOperation = TouringOperation.RetainAndSubtractWithStretched
+    Else
+      iOperation = TouringOperation.RetainAndSubtractWithRetained
+    Endif
+  Else If sOperator = "*" Then
+    If bOperand1IsStretched And If bOperand2IsStretched Then
+      iOperation = TouringOperation.StretchAndMultiplyWithStretched
+    Else If bOperand1IsStretched Then
+      iOperation = TouringOperation.StretchAndMultiplyWithRetained
+    Else If bOperand2IsStretched Then
+      iOperation = TouringOperation.RetainAndMultiplyWithStretched
+    Else
+      iOperation = TouringOperation.RetainAndMultiplyWithRetained
+    Endif
+  Else
+    Dim sError4 As String = "TouringMachine.EvaluateOperator() - Operatorand to evaluate is of not recognized."
+    If FMain.Debug Then
+      Message.Error(sError4)
+    Else
+      Logger.LogToFile("Error", "Touring Machine", sError4)
+    Endif
+    Return TouringOperation.Retain
+  Endif
+
+  Return iOperation
+End
+
+'' Calculates all touring operations, registered to this touring machine.
+'' The operations are applied in the sequence of registration, the rule 'point calculation before line calculation' is not pplied.
+''
+'' The **oPositionOrigin** represents the left top corner of a 2D position, that might replace a single operand during the calculation.
+'' The **oDimension** represents a 2D dimension value, that might replace a single operand during the calculation.
+'' The **fStretch** represents the stretch value, that might be applied to operands during the calculation.
+'' Returns the calculated coordinate. Dafault is the value of the first operand. Fallback (if no operand is registered) is 0.0.
+Public Function Calculate(oPositionOrigin As PointF, oDimension As PointF, fStretch As Float) As Float
+  Dim fResult As Float = 0.0
+
+  If $fOperandValues.Length > 0 Then
+    fResult = $fOperandValues[0]
+  Endif
+
+  If $aOperations.Length = 0 Then
+    Return fResult
+  Else
+    fResult = Calculate_Replacement(fResult, oPositionOrigin, oDimension, $aOperations[0].Operand0Replacement)
+
+    Dim fNextValue As Float = 0.0
+
+    If $fOperandValues.Length > 1 Then
+      fNextValue = Calculate_Replacement($fOperandValues[1], oPositionOrigin, oDimension, $aOperations[0].Operand1Replacement)
+    End If
+
+    fResult = Calculate_ApplyOperation(fResult, fNextValue, fStretch, $aOperations[0].Operation)
+  Endif
+
+  For iIndex As Integer = 1 To $aOperations.Length - 1
+    If $aOperations[iIndex].Operand0Replacement <> TouringOperandReplacement.NoReplacement Then
+      Dim sError As String = "TouringMachine.Calculate() - Operation " & iIndex & " - Operand0Replacement stould be 'NoReplacement'."
+      If FMain.Debug Then
+        Message.Error(sError)
+      Else
+        Logger.LogToFile("Error", "Touring Machine", sError)
+      Endif
+      Return TouringOperation.Retain
+    Else
+      fResult = Calculate_Replacement(fResult, oPositionOrigin, oDimension, $aOperations[iIndex].Operand0Replacement)
+    Endif
+
+    Dim fLastValue As Float = 0.0
+
+    If $fOperandValues.Length > iIndex + 1 Then
+      fLastValue = Calculate_Replacement($fOperandValues[iIndex + 1], oPositionOrigin, oDimension, $aOperations[iIndex].Operand1Replacement)
+    End If
+
+    fResult = Calculate_ApplyOperation(fResult, fLastValue, fStretch, $aOperations[iIndex].Operation)
+  Next
+
+  Return fResult
+End
+
+'' Private - no description.
+Private Function Calculate_Replacement(fStart As Float, positionOrigin As PointF, oDimension As PointF, iOperandReplacement As Integer) As Float
+  Select Case iOperandReplacement
+    Case TouringOperandReplacement.ReplaceWithX
+      Return positionOrigin.X
+    Case TouringOperandReplacement.ReplaceWithY
+      Return positionOrigin.Y
+    Case TouringOperandReplacement.ReplaceWithW
+      Return oDimension.X
+    Case TouringOperandReplacement.ReplaceWithH
+      Return oDimension.Y
+    Case TouringOperandReplacement.ReplaceWithr
+      Return (oDimension.X + oDimension.y) * 0.25
+  End Select
+
+  Return fStart
+End
+
+'' Private - no description.
+Private Function Calculate_ApplyOperation(fStart As Float, fNext As Float, fStretch As Float, iOperation As Integer) As Float
+  Dim fResult As Float = fStart
+
+  If iOperation = TouringOperation.Retain Then
+    Return fResult
+  Endif
+  If iOperation = TouringOperation.Stretch Then
+    Return fResult * fStretch
+  Endif
+
+  If iOperation = TouringOperation.StretchAndAddWithRetained Or If iOperation = TouringOperation.StretchAndSubtractWithRetained Or If iOperation = TouringOperation.StretchAndMultiplyWithRetained Then 
+    fResult = fResult * fStretch
+  Endif
+
+  If iOperation = TouringOperation.RetainAndAddWithRetained Or If iOperation = TouringOperation.StretchAndAddWithRetained Then
+    fResult = fResult + fNext
+  Else If iOperation = TouringOperation.RetainAndAddWithStretched Or If iOperation = TouringOperation.StretchAndAddWithStretched Then
+    fResult = fResult + fNext * fStretch
+  Endif
+
+  If iOperation = TouringOperation.RetainAndSubtractWithRetained Or If iOperation = TouringOperation.StretchAndSubtractWithRetained Then
+    fResult = fResult - fNext
+  Else If iOperation = TouringOperation.RetainAndSubtractWithStretched Or If iOperation = TouringOperation.StretchAndSubtractWithStretched Then
+    fResult = fResult - fNext * fStretch
+  Endif
+
+  If iOperation = TouringOperation.RetainAndMultiplyWithRetained Or If iOperation = TouringOperation.StretchAndMultiplyWithRetained Then
+    fResult = fResult * fNext
+  Else If iOperation = TouringOperation.RetainAndMultiplyWithStretched Or If iOperation = TouringOperation.StretchAndMultiplyWithStretched Then
+    fResult = fResult * fNext * fStretch
+  Endif
+
+  Return fResult
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Extended SVG Formula functionality
+' ###############################################

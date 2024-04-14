@@ -1,0 +1,103 @@
+' Gambas class file
+
+''' This class represents the visible part of a model as the base class for **LabeledShape** and **LabeledEdge**.
+
+Export
+Inherits Element
+
+' ###############################################
+' BEGIN Diagram element functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' The flag identifying this diagram element as an shape.
+Property Read IsShape As Boolean
+
+'' The flag identifying this diagram element as an edge.
+Property Read IsEdge As Boolean
+
+'' Gets the bounding box of this diagram element. To be overridden!
+Property Read Bounds As RectF
+
+'' The flag identifying this diagram element as selected.
+Property IsSelected As Boolean
+
+'' Private - no description.
+Private $bIsSelected As Boolean
+
+'' Private - no description.
+Private $bIsIsShape As Boolean
+
+'' Constructs a new diagram element.
+Public Sub _new()
+  $bIsIsShape = True
+  $bIsSelected = False
+  
+  Super.SwitchToDiagramElement()
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function IsShape_Read() As Boolean
+  Return $bIsIsShape
+End
+
+'' Private - no description.
+Private Function IsEdge_Read() As Boolean
+  Return Not $bIsIsShape
+End
+
+'' Private - no description.
+Private Function IsSelected_Read() As Boolean
+  Return $bIsSelected
+End
+
+'' Private - no description.
+Private Function IsSelected_Write(bIsSelected As Boolean)
+  $bIsSelected = bIsSelected
+End
+
+'' Private - no description. To be overridden!
+Private Function Bounds_Read() As RectF
+  Return New RectF(0, 0, 0, 0)
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Switches the default behavior from labaled shape to labaled edge.
+'' This method is hidden in the hope, that only deived and **friend** classes know and use this method.
+Public Sub _SwitchToLabeledEdge()
+  $bIsIsShape = False
+End
+
+'' Performs a hit test. To be overridden!
+''
+'' The **oPoint** holds the coordinate to perform the hit test for.
+'' Returns: True on hit, or false otherwise.
+Public Function HitTest(oPoint As PointF) As Boolean
+  Return False
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Diagram element functionality
+' ###############################################

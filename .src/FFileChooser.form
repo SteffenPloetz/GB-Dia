@@ -1,0 +1,14 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,97,71)
+  Arrangement = Arrange.Vertical
+  Margin = True
+  { !cFileChooser FileChooser
+    MoveScaled(1,1,95,69)
+    #Public = True
+    Expand = True
+    ShowButton = True
+    ReadOnly = True
+  }
+}
