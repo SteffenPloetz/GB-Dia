@@ -1,0 +1,397 @@
+' Gambas class file
+
+''' This class represents the visible part of a model as the shape within a flow.
+
+Inherits LabeledShape
+Export
+
+' ###############################################
+' BEGIN Flow shape functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get or set the shape position.
+Property Position As PointF
+
+'' Get the shape size.
+Property Read Size As PointF
+
+'' Gets the bounding box of this diagram element. Override base class property.
+Property Read Bounds As RectF
+
+'' Gets or sets the stretch of this symbol size.
+Property Stretch As PointF
+
+'' Gets the stencil associated to this this symbol.
+Property Read Stencil As ShapeStencil
+
+'' Gets the stencil identity of the stencil associated to this symbol.
+Property Read StencilName As String
+
+'' Gets or sets the invisible part of a model.
+Property Node As ModelNode
+
+'' Gets or sets the display name.
+Property Name As String
+
+'' Gets or sets the bounding box of the name.
+Property NameBounds As RectF
+
+'' Gets the bounding box of the name, based on the typical available size.
+Property Read NameBoundsToEditorBestBounds As RectF
+
+
+' Store the shape position.
+Private $aPosition As PointF
+
+' Store the size stretch.
+Private $aStretch As PointF
+
+' Store the associated stencil.
+Private $oStencil As ShapeStencil
+
+' Store the identity of the stencil associated to this shape. It must match to any available stencil, to associate a stencil to this shape.
+Private $sStencilName As String
+
+' Store the associated model layer.
+Private $oNode As ModelNode
+
+' Store the bounding box of the name.
+Private $oLabel As ElementLabel
+
+Public Sub _new(fX As Float, fY As Float, fDefaultW As Float, fDefaultH As Float, sStencilName As String, Optional fWidthStretch As Float = 1.0, Optional fHeightStretch As Float = 1.0)
+  $aPosition = PointF(fX, fY)
+  $aStretch = PointF(fWidthStretch, fHeightStretch)
+  $sStencilName = sStencilName
+
+  If ShapeStencil.HasStencil(sStencilName) = False Then
+      Dim sError As String = "FlowShape.New() - No stencil found for '" & sStencilName & "'."
+      If FMain.Debug Then
+        Message.Error(sError)
+      Else
+        Logger.LogToFile("Error", "Touring Machine", sError)
+      Endif
+  End If
+  $oStencil = ShapeStencil.GetStencil(sStencilName, fDefaultW, fDefaultH)
+
+  $oNode = New ModelNode(sStencilName)
+  $oLabel = New ElementLabel
+  $oLabel.SwitchToDiagramElement()
+End
+
+'' Destructs the (actual) flow shape.
+Public Sub _free()
+  If $oStencil <> Null Then 
+    $oStencil = Null
+  Endif
+
+  $oNode = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Position_Read() As PointF
+  Return $aPosition
+End
+
+'' Private - no description.
+Private Sub Position_Write(position As PointF)
+  $aPosition = position
+End
+
+'' Private - no description. Overrides the base class property.
+Private Function Size_Read() As PointF
+  Return New PointF($oStencil.DefaultSize.X * $aStretch.X, $oStencil.DefaultSize.Y * $aStretch.Y)
+End
+
+'' Private - no description. Overrides the base class property.
+Private Function Bounds_Read() As RectF
+  Dim oSize As PointF = Me.Size
+
+  Return New RectF($aPosition.X, $aPosition.Y, oSize.X, oSize.Y)
+End
+
+'' Private - no description.
+Private Function Stretch_Read() As PointF
+  Return $aStretch
+End
+
+'' Private - no description.
+Private Sub Stretch_Write(stretch As PointF)
+  $aStretch = stretch
+End
+
+'' Private - no description.
+Private Function Stencil_Read() As ShapeStencil
+  Return $oStencil
+End
+
+'' Private - no description.
+Private Function StencilName_Read() As String
+  Return $sStencilName
+End
+
+'' Private - no description.
+Private Function Node_Read() As ModelNode
+  Return $oNode
+End
+
+'' Private - no description.
+Private Sub Node_Write(oNode As ModelNode)
+  $oNode = oNode
+End
+
+'' Private - no description.
+Private Function Name_Read() As String
+  If $oNode <> Null Then
+    Return $oNode.Name
+  Endif
+
+  Return ""
+End
+
+'' Private - no description.
+Private Sub Name_Write(sName As String)
+  If $oNode <> Null Then
+    $oNode.Name = sName
+  Endif
+End
+
+'' Private - no description.
+Private Function NameBounds_Read() As RectF
+  Return $oLabel.Bounds
+End
+
+'' Private - no description.
+Private Sub NameBounds_Write(oBounds As RectF)
+  $oLabel._SetBounds(oBounds)
+End
+
+'' Calculates the bounding box of the name, based on the typical available size.
+''
+'' Returns: The bounding box of the name, based on the typical available size.
+Private Function NameBoundsToEditorBestBounds_Read() As RectF
+  Dim oSize As PointF = Me.Size
+  Dim oBounds As RectF = New RectF
+
+  If oSize.X >= 80 And If oSize.X >= 60 Then
+      oBounds.X = Me.Position.X + 4
+      oBounds.Y = Me.Position.Y + 8
+      oBounds.W = oSize.X - 8
+      oBounds.H = oSize.Y - 12
+    Else
+      oBounds.X = Me.Position.X + (oSize.X - ShapeStencil.DefaultShapeSize.X) * 0.5
+      oBounds.Y = Me.Position.Y + oSize.Y + 8
+      oBounds.W = ShapeStencil.DefaultShapeSize.X - 8
+      oBounds.H = ShapeStencil.DefaultShapeSize.Y / 2
+    Endif
+
+  Return oBounds
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Provides the rendering instructions to draw the shape (normalized / without zoom).
+''
+'' The **bDirty** defines whether the buffered calculation can be used or the buffered calculation is dirty.
+Public Function RenderingInstructions(bDirty As Boolean) As RenderingInstruction[]
+  Dim iNameRenderingInstructions As Integer = 0
+  If Me.Name <> "" Then
+    iNameRenderingInstructions = 2
+  Endif
+
+  Dim aRenderingPrimitives As RenderingInstruction[] = New RenderingInstruction[$oStencil.Styleables.Length * 3 + iNameRenderingInstructions]
+  Dim aExtend As PointF = PointF(0, 0)
+  Dim iCounter As Integer = 0
+
+  For iStyleableIndex As Integer = 0 To $oStencil.Styleables.Length - 1
+    Dim oStyleable As Styleable = $oStencil.Styleables[iStyleableIndex]
+
+    aRenderingPrimitives[iCounter * 3 + 0] = RenderingInstruction.CreateSolidColor(oStyleable.StrokeColor)
+    aRenderingPrimitives[iCounter * 3 + 1] = RenderingInstruction.CreateStrokeWidt(oStyleable.StrokeWidth)
+    aRenderingPrimitives[iCounter * 3 + 2] = RenderingInstructions$CalculateGeometry(oStyleable, aExtend)
+
+    iCounter = iCounter + 1
+  Next
+
+  If Me.Name <> "" Then
+    Dim oLabelBounds As RectF = $oLabel.Bounds
+
+    aRenderingPrimitives[iCounter * 3 + 0] = RenderingInstruction.CreateFont(ShapeStencil.DefaultFontFace, ShapeStencil.DefaultFontSize, Color.Black)
+    aRenderingPrimitives[iCounter * 3 + 1] = RenderingInstruction.CreateTextBlock(Me.Name, ShapeStencil.DefaultFontSize, PointF(oLabelBounds.X, oLabelBounds.Y), PointF(oLabelBounds.W, oLabelBounds.H), 0.5)
+  Endif
+
+  Return aRenderingPrimitives
+End
+
+Private Function RenderingInstructions$CalculateGeometry(styleableValue As Styleable, extendValue As PointF) As RenderingInstruction
+  Dim fX As Float = $aPosition.X
+  Dim fY As Float = $aPosition.Y
+  Dim fW As Float = $oStencil.DefaultSize.X
+  Dim fH As Float = $oStencil.DefaultSize.Y
+  Dim fR As Float = 0.0
+
+  If styleableValue Is Circle Then 
+    Dim oCircle As Circle = styleableValue
+
+    Dim cX As TouringMachine = oCircle.CX
+    Dim cY As TouringMachine = oCircle.CY
+    Dim cr As TouringMachine = oCircle.R
+
+    If extendValue.X <> 0 Or If extendValue.Y <> 0 Then
+        fX = cX.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+        fy = cY.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+        fR = cr.Calculate($aPosition, $oStencil.DefaultSize, ($aStretch.X + $aStretch.Y) * 0.5) + (extendValue.X + extendValue.Y) * 0.5
+    Else 
+        fX = cX.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+        fy = cY.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+        fR = cr.Calculate($aPosition, $oStencil.DefaultSize, ($aStretch.X + $aStretch.Y) * 0.5)
+    Endif
+
+    Return RenderingInstruction.CreateCircle(fX, fY, fR)
+  Else If styleableValue Is RoundedRect Then
+    Dim oRectangle As RoundedRect = styleableValue
+
+    Dim rX As TouringMachine = oRectangle.X
+    Dim rY As TouringMachine = oRectangle.Y
+    Dim rW As TouringMachine = oRectangle.Width
+    Dim rH As TouringMachine = oRectangle.Height
+    Dim rR As TouringMachine = oRectangle.RX
+
+    If extendValue.X <> 0 Or If extendValue.Y <> 0 Then
+      fX = rX.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X) - extendValue.X
+      fy = rY.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y) - extendValue.X
+      fW = rW.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X) + extendValue.X * 2
+      fH = rH.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y) + extendValue.Y * 2
+      fR = rR.Calculate($aPosition, $oStencil.DefaultSize, ($aStretch.X + $aStretch.Y) * 0.5)
+    Else
+      fX = rX.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+      fy = rY.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+      fW = rW.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+      fH = rH.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+      fR = rR.Calculate($aPosition, $oStencil.DefaultSize, ($aStretch.X + $aStretch.Y) * 0.5)
+    Endif
+
+    Return RenderingInstruction.CreateRoundedRectangle(fX, fY, fW, fH, 10)
+  Else If styleableValue Is Polygon Then
+    Dim oPolygon As Polygon = styleableValue
+    Dim aPoints As PointF[] = New PointF[oPolygon.Points.Length / 2]
+
+    For iPointIndex As Integer = 0 To oPolygon.Points.Length - 1
+      If iPointIndex % 2 = 0 Then
+        aPoints[iPointIndex / 2] = PointF(0, 0)
+        aPoints[iPointIndex / 2].X = oPolygon.Points[iPointIndex].Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+      Else
+        aPoints[iPointIndex / 2].Y = oPolygon.Points[iPointIndex].Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+      Endif
+    Next
+
+    If aPoints.Length > 2 Then
+      If extendValue.X <> 0 Or If extendValue.Y <> 0 Then
+        Dim oCenterPoint As PointF = PointF(aPoints[0].X, aPoints[0].Y)
+        Dim iCoordinateIndex As Integer
+
+        For iCoordinateIndex = 1 To aPoints.Length - 1
+          oCenterPoint.X += aPoints[iCoordinateIndex].X
+          oCenterPoint.Y += aPoints[iCoordinateIndex].Y
+        Next
+
+        oCenterPoint.X = oCenterPoint.X / aPoints.Length
+        oCenterPoint.Y = oCenterPoint.Y / aPoints.Length
+
+        For iCoordinateIndex = 0 To aPoints.Length - 1
+          If aPoints[iCoordinateIndex].X < oCenterPoint.X Then
+            aPoints[iCoordinateIndex].X = aPoints[iCoordinateIndex].X - extendValue.X
+          Else If aPoints[iCoordinateIndex].X > oCenterPoint.X Then
+            aPoints[iCoordinateIndex].X = aPoints[iCoordinateIndex].X + extendValue.X
+          Endif
+
+          If aPoints[iCoordinateIndex].Y < oCenterPoint.Y Then
+            aPoints[iCoordinateIndex].Y = aPoints[iCoordinateIndex].Y - extendValue.Y
+          Else If aPoints[iCoordinateIndex].Y > oCenterPoint.Y Then
+            aPoints[iCoordinateIndex].Y = aPoints[iCoordinateIndex].Y + extendValue.Y
+          Endif
+        Next
+      Endif
+    Endif
+
+    Return RenderingInstruction.CreatePolygon(aPoints)
+  Else If styleableValue Is Strait Then
+    Dim oStrait As Strait = styleableValue
+
+    Dim x0 As TouringMachine = oStrait.X0
+    Dim y0 As TouringMachine = oStrait.Y0
+    Dim x1 As TouringMachine = oStrait.X1
+    Dim y1 As TouringMachine = oStrait.Y1
+
+    fX = x0.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+    fy = y0.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+    fW = x1.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.X)
+    fH = y1.Calculate($aPosition, $oStencil.DefaultSize, $aStretch.Y)
+
+    Return RenderingInstruction.CreateStrait(fX, fY, fW, fH)
+  Endif
+
+  Return Null
+End
+
+
+'' Provides the rendering instructions to draw the selection hiliting of the shape (normalized / without zoom).
+''
+'' The **bDirty** defines whether the buffered calculation can be used or the buffered calculation is dirty.
+Public Function HilightedRenderingInstructions(bDirty As Boolean) As RenderingInstruction[]
+  Dim aRenderingPrimitives As RenderingInstruction[] = New RenderingInstruction[3]
+  Dim aExtend As PointF = PointF(3, 3)
+
+  aRenderingPrimitives[0] = RenderingInstruction.CreateSolidColor(Color.Orange)
+  aRenderingPrimitives[1] = RenderingInstruction.CreateStrokeWidt(7)
+
+  If $oStencil.Styleables.Length > 0 Then
+    aRenderingPrimitives[2] = RenderingInstructions$CalculateGeometry($oStencil.Styleables[0], aExtend)
+  Else
+    aRenderingPrimitives[2] = RenderingInstruction.CreateStrokeWidt(7)
+  Endif
+
+  Return aRenderingPrimitives
+End
+
+'' Performs a hit test. Overrides the base class method.
+''
+'' The **pointValue** defines the coordinate to perform the hit test for.
+'' Returns: True on hit, or false otherwise.
+Public Function HitTest(pointValue As PointF) As Boolean
+  Dim aBounds As RectF = Me.Bounds
+
+  Return aBounds.Contains(pointValue.X, pointValue.Y)
+End
+
+'' Sets the boundig box for the name based on the available/reserved space.
+Public Sub SetNameBoundsToEditorBestBounds()
+  Dim oBounds As RectF = NameBoundsToEditorBestBounds_Read()
+
+  $oLabel._SetBounds(oBounds)
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Flow shape functionality
+' ###############################################

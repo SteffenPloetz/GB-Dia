@@ -1,0 +1,65 @@
+' Gambas class file
+
+''' This class provides a styleable rhombus. The behavior is similar to SVG polygon.
+''' Style attributes are part of the base class **ESvgStyleable**.
+
+Export
+Inherits Styleable
+
+' ###############################################
+' BEGIN Polygon functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' The array of points. The ponts alternathe between x-coordinate and y-coordinate.
+Property Points As TouringMachine[]
+
+
+'' Private - no description.
+Private $aPoints As TouringMachine[]
+
+'' Constructs a new styleable polygon. Base class **Styleable** is.
+''
+'' The **pointsValue** defines the array of points. The ponts alternathe between x-coordinate and y-coordinate.
+Public Sub _new(pointsValue As TouringMachine[])
+  $aPoints = pointsValue
+End
+
+'' Destructs the (actual) polygon.
+Public Sub _free()
+  If $aPoints <> Null Then
+    For Each oPoint As TouringMachine In $aPoints
+      oPoint = Null
+    Next
+  Endif
+  $aPoints = Null
+End
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Points_Read() As TouringMachine[]
+  Return $aPoints
+End
+
+'' Private - no description.
+Private Sub Points_Write(pointsValue As TouringMachine[])
+  $aPoints = pointsValue
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Polygon functionality
+' ###############################################
+

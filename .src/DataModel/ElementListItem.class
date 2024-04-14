@@ -1,0 +1,101 @@
+' Gambas class file
+
+''' This class provides a storage-item for a double-linked list of elements.
+
+' ###############################################
+' BEGIN List item functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Gets or sets the previous element list item of this list item.
+Property PreviousItem As ElementListItem
+
+'' Gets or sets the element, associated to this list item.
+Property Data As Element
+
+'' Gets or sets the next element list item of this list item.
+Property NextItem As ElementListItem
+
+
+'' Private - no description.
+Private $oPreviousItem As ElementListItem
+
+'' Private - no description.
+Private $oElement As Element
+
+'' Private - no description.
+Private $oNextItem As ElementListItem
+
+
+'' Constructs a new element list item.
+''
+'' The **previousItemValue** defines the previous element list item of this list item.
+'' The **elementValue** defines the element, associated to this list item.
+'' The **nextItemValue** defines the next element list item of this list item.
+Public Sub _new(previousItemValue As ElementListItem, elementValue As Element, nextItemValue As ElementListItem)
+  $oPreviousItem = previousItemValue
+  $oElement = elementValue
+  $oNextItem = nextItemValue
+End
+
+'' Destructs the (actual) element list iterator.
+Public Sub _free()
+  $oElement = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function PreviousItem_Read() As ElementListItem
+  Return $oPreviousItem
+End
+
+'' Private - no description.
+Private Sub PreviousItem_Write(Value As ElementListItem)
+  $oPreviousItem = Value
+End
+
+'' Private - no description.
+Private Function Data_Read() As Element
+  Return $oElement
+End
+
+'' Private - no description.
+Private Sub Data_Write(elementValue As Element)
+  $oElement = elementValue
+End
+
+'' Private - no description.
+Private Function NextItem_Read() As ElementListItem
+  Return $oNextItem
+End
+
+'' Private - no description.
+Private Sub NextItem_Write(Value As ElementListItem)
+  $oNextItem = Value
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN List item functionality
+' ###############################################

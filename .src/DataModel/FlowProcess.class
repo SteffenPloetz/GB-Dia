@@ -1,0 +1,101 @@
+' Gambas class file
+
+''' This class provides a flow process, the invisible part of a flow model.
+
+' ###############################################
+' BEGIN Flow process functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get or set the identity.
+Property ID As String
+
+'' Private - no description.
+Private $sID As String
+
+'' Private - no description.
+Private $cBaseElements As Collection
+
+'' Constructs a new flow process.
+Public Sub _new()
+  $cBaseElements = New Collection
+End
+
+'' Destructs the (actual) flow process.
+Public Sub _free()
+  $cBaseElements.Clear() ' This also decreases the reference counter of the elements.
+  $cBaseElements = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function ID_Read() As String
+  Return $sID
+End
+
+'' Private - no description.
+Private Sub ID_Write(sID As String)
+  $sID = sID
+End
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Add or set an base element.
+''
+'' The **sIdentityame** defines the identity of the attribute.
+'' The **oBaseElement** defines the base element.
+'' Returns: True if base element has been added, or false if base element has been updated.
+Public Function AddOrSet(sIdentity As String, oBaseElement As ModelElement) As Boolean
+  If $cBaseElements.Exist(sIdentity) Then
+    $cBaseElements[sIdentity] = oBaseElement
+    Return False
+  Else
+    $cBaseElements.Add(oBaseElement, sIdentity)
+    Return True
+  Endif
+End
+
+'' Determine if the indicated base element exists.
+''
+'' The **sIdentity** defines the identity of the base elemen.
+'' Returns: True if base element exists, or false otherwise.
+Public Function Exist(sIdentity As String) As Boolean
+  Return $cBaseElements.Exist(sIdentity)
+End
+
+'' Get the base element.
+''
+'' The **sIdentity** defines the identity of the base element.
+'' Returns: The base element on success, or null otherwise.
+Public Function TryGetValue(sIdentity As String) As ModelElement
+  If $cBaseElements.Exist(sIdentity) Then
+    Dim oElement As ModelElement = $cBaseElements[sIdentity]
+    Return oElement
+  Endif
+
+  Return Null
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Flow process functionality
+' ###############################################

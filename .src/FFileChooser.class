@@ -1,0 +1,70 @@
+' Gambas class file
+
+''' This class implements the code behind the FFileChooser form.
+
+' ###############################################
+' BEGIN FFile chooser functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+Static Private $sLastSelectedPath As String
+Static Private $bResult As Boolean
+Static Private $sFilterExtension As String
+Static Private $sFilterName As String
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Event handler implementation
+' -----------------------------------------------
+
+Public Sub cFileChooser_BeforeArrange()
+  cFileChooser.Filter = [$sFilterExtension, $sFilterName]
+End
+
+Public Sub cFileChooser_Activate()
+  $sLastSelectedPath = cFileChooser.SelectedPath
+  $bResult = True
+  Me.Close
+End
+
+Public Sub cFileChooser_Cancel()
+  Me.Close
+End
+
+' -----------------------------------------------
+' END Event handler implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+Static Public Function OpenSigleFileModal(Optional sFilterExtension As String = "", Optional sFilterName As String = "") As Boolean
+  Dim hForm As Form
+
+  $sLastSelectedPath = ""
+  $sFilterExtension = sFilterExtension
+  $sFilterName = sFilterName
+  $bResult = False
+  hForm = New FFileChooser
+  hForm.ShowModal()
+  Return $bResult
+End
+
+Static Public Function LastSelectedPath() As String
+  Return $sLastSelectedPath
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END FFile chooser functionality
+' ###############################################

@@ -1,0 +1,141 @@
+' Gambas class file
+
+''' This class is manages the undo/redo actions.
+
+Export
+
+' ###############################################
+' BEGIN Undo redo buffer functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Buffer the actions. Any object, derived from **UndoRedoAction** is fine.
+Private $aActions As UndoRedoAction[]
+
+'' Store the usage of the undo-redo-buffer.
+Private $iCount As Integer
+
+'' Store the index of the current action.
+Private $iCurrentUndo As Integer
+
+'' Gets the number of actions, currently registered to the undo-redo-buffer.
+Property Read Count As Integer
+
+'' Checks whether the current position of undo-redo buffer represents a valid undo action.
+Property Read CanUndo As Boolean
+
+'' Checks whether the current position of undo-redo buffer represents a valid (re-) do action.
+Property Read CanRedo As Boolean
+
+'' Constructs a new undo-redo-buffer.
+Public Sub _new()
+  $aActions = New UndoRedoAction[8]
+  $iCount = 0
+  $iCurrentUndo = -1
+End
+
+'' Released this undo-redo-buffer.
+Public Sub _free()
+  For iIndex As Integer = 0 To $iCount - 1
+    $aActions[iIndex] = Null
+  Next
+
+  $aActions = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+' Property implementation.
+Private Function Count_Read() As Integer
+  Return $iCount
+End
+
+' Property implementation.
+Private Function CanUndo_Read() As Boolean
+  Return ($iCurrentUndo >= 0) And ($iCurrentUndo < $iCount)
+End
+
+' Property implementation.
+Private Function CanRedo_Read() As Boolean
+  Return ($iCurrentUndo < $iCount - 1)
+End
+
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Adds a new action to the buffer (it's Do() method is not called here).
+'' Action will be added after the last undo action in the buffer.
+'' Redo actions after the new action are removed.
+''
+'' The **oAction** represents an atomic operation that can be undone / redone.
+Public Sub AddUndoAction(oAction As UndoRedoAction)
+  If oAction = Null Then Return
+
+  If $iCount >= $aActions.Length Then 
+    $aActions.Resize($aActions.Length + 4)
+  Endif
+
+  While $iCount > $iCurrentUndo + 1
+    $iCount = $iCount - 1
+    $aActions[$iCount] = Null
+  Wend
+
+  $iCount = $iCount + 1
+  $iCurrentUndo = $iCurrentUndo + 1
+  $aActions[$iCurrentUndo] = oAction
+End
+
+'' Executes the undo action at the current position of undo-redo buffer
+'' and moves the current position one step back
+''
+'' Returns: A flag, determinimg whether the application of this action needs a redraw.
+Public Function Undo() As Boolean
+  If Me.CanUndo <> True Then Return False
+
+  Dim bNeedsRedraw As Boolean = False
+
+  $aActions[$iCurrentUndo].Undo()
+  bNeedsRedraw = $aActions[$iCurrentUndo].NeedsRedraw
+  $iCurrentUndo = $iCurrentUndo - 1
+
+  Return bNeedsRedraw
+End
+
+'' Executes the (re-) do action at the current position of undo-redo buffer
+'' and moves the current position one step forward
+''
+'' Returns: A flag, determinimg whether the application of this action needs a redraw.
+Public Function Redo() As Boolean
+  If Me.CanRedo <> True Then Return False
+
+  Dim bNeedsRedraw As Boolean = False
+
+  $iCurrentUndo = $iCurrentUndo + 1
+  bNeedsRedraw = $aActions[$iCurrentUndo].NeedsRedraw
+  $aActions[$iCurrentUndo].Do()
+
+  Return bNeedsRedraw
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Undo redo buffer functionality
+' ###############################################

@@ -1,0 +1,296 @@
+' Gambas class file
+
+''' This class provides a basic set of shape stencils.
+''' The shape stencils provide a geometry made of **Stylables** - graphic primitives (lines, rectangles, circles, ...).
+'''
+''' This class also implements a simple shape stencil provider.
+''' It is planned to replace it with a file-based stencil set, that enables easy extension of the shape stencil set.
+
+' ###############################################
+' BEGIN Shape stencil functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This constant identifies the type of the shape stencil as a **StartEvent** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessNodeTypes** name.
+Static Public Const StartEvent As String = "startEvent"
+
+'' This constant identifies the type of the shape stencil as a **IntermediateEvent** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessNodeTypes** name.
+Static Public Const IntermediateEvent As String = "intermediateEvent"
+
+'' This constant identifies the type of the shape stencil as a **EndEvent** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessNodeTypes** name.
+Static Public Const EndEvent As String = "endEvent"
+
+'' This constant identifies the type of the shape stencil as a **Task** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessNodeTypes** name.
+Static Public Const Task As String = "task"
+
+'' This constant identifies the type of the shape stencil as a **ExclusiveGateway** stencil.
+'' Remarks: Keep this name in sync with the **BPMN.ProcessNodeTypes** name.
+Static Public Const ExclusiveGateway As String = "exclusiveGateway"
+
+
+'' This constant defines the default font size for tect attributes.
+Static Public Const DefaultFontSize As Float = 12
+
+'' This constant defines the default font face for tect attributes.
+Static Public Const DefaultFontFace As String = "Cantarell"
+
+'' This constant defines the shape size of default shapes.
+Static Property Read DefaultShapeSize As PointF
+
+'' This constant defines the shape size of small shapes.
+Static Property Read SmallShapeSize As PointF
+
+'' This constant defines the shape size of tiny shapes.
+Static Property Read TinyShapeSize As PointF
+
+
+'' This property gets the array of the styleable geomrtric elements (lines, rectangles, circles, ...), this shape stencil is made of.
+Property Read Styleables As Styleable[]
+
+'' This property gets the unique type name of this shape stencil.
+Property Read StencilName As String
+
+'' This property gets the default size of the bounding box for this shape stencil.
+Property DefaultSize As PointF
+
+'' Private - no description.
+Private $aStyleables As Styleable[]
+
+'' Private - no description.
+Private $sStencilName As String
+
+'' Private - no description.
+Private $aDefaultSize As PointF
+
+
+'' Constructs a new shape stencil.
+''
+'' The **aStyleables** defines the styleable geomrtric elements (lines, rectangles, circles, ...), this shape stencil is made of.
+'' The **sStencilName** defines the unique type name of this shape stencil.
+'' The **fDefaultWidth** defines the default width of the bounding box for this shape stencil.
+'' The **fDefaultHeight** defines the default height of the bounding box for this shape stencil.
+Public Sub _new(aStyleables As Styleable[], sStencilName As String, fDefaultWidth As Float, fDefaultHeight As Float)
+  $aStyleables = aStyleables
+  $sStencilName = sStencilName
+  $aDefaultSize = PointF(fDefaultWidth, fDefaultHeight)
+End
+
+'' Destructs the (actual) shape stencil.
+Public Sub _free()
+  If $aStyleables <> Null Then
+    For Each oStyleable As Styleable In $aStyleables
+      oStyleable = Null
+    Next
+  Endif
+  $aStyleables = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Styleables_Read() As Styleable[]
+  Return $aStyleables
+End
+
+'' Private - no description.
+Private Function StencilName_Read() As String
+  Return $sStencilName
+End
+
+'' Private - no description.
+Private Function DefaultSize_Read() As PointF
+  Return $aDefaultSize
+End
+
+'' Private - no description.
+Private Sub DefaultSize_Write(defaultSize As PointF)
+  $aDefaultSize = defaultSize
+End
+
+'' Private - no description.
+Static Private Function DefaultShapeSize_Read() As PointF
+  Return PointF(112, 90)
+End
+
+'' Private - no description.
+Static Private Function SmallShapeSize_Read() As PointF
+  Return PointF(50, 50)
+End
+
+'' Private - no description.
+Static Private Function TinyShapeSize_Read() As PointF
+  Return PointF(40, 40)
+End
+
+' -----------------------------------------------
+' End Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN Shape stencil functionality
+' ###############################################
+
+' ###############################################
+' BEGIN Shape stencil provider functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' Checks whether the indicated stencil-name is known.
+''
+'' The **stencilName** argument defines the stencil-name to check.
+Static Public Function HasStencil(stencilName As String) As Boolean
+  Select Case stencilName
+    Case StartEvent
+      Return True
+    Case Task
+      Return True
+    Case ExclusiveGateway
+      Return True
+    Case IntermediateEvent
+      Return True
+    Case EndEvent
+      Return True
+  End Select
+
+  Return False
+End
+
+'' Creates the indicated shape stencil.
+''
+'' The **sStencilName** argument defines the stencil-name of the requested shape stencil.
+'' The **fDefaultWidth** argument defines the default width of the requested shape stencil.
+'' The **fDefaultHeight** argument defines the default height of the requested shape stencil.
+Static Public Function GetStencil(sStencilName As String, fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Select Case sStencilName
+    Case StartEvent
+      Return CreateStartEvent(fDefaultWidth, fDefaultHeight)
+    Case Task
+      Return CreateTask(fDefaultWidth, fDefaultHeight)
+    Case ExclusiveGateway
+      Return CreateExclusiveGateway(fDefaultWidth, fDefaultHeight)
+    Case IntermediateEvent
+      Return CreateIntermediateEvent(fDefaultWidth, fDefaultHeight)
+    Case EndEvent
+      Return CreateEndEvent(fDefaultWidth, fDefaultHeight)
+  End Select
+
+  Return Null
+End
+
+
+'' Private - no description.
+Static Private Function CreateStartEvent(fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Dim aStyleables As Styleable[] = New Styleable[1]
+  Dim x As TouringMachine = TouringMachine.Create("FX", "*", "F2.0", "+", "W", "*", "F0.5")
+  Dim y As TouringMachine = TouringMachine.Create("FY", "*", "F2.0", "+", "H", "*", "F0.5")
+  Dim r As TouringMachine = TouringMachine.Create("FR")
+
+  aStyleables[0] = New Circle(x, y, r, Color.Black)
+
+  Dim result As ShapeStencil = New ShapeStencil(aStyleables, StartEvent, fDefaultWidth, fDefaultHeight)
+  Return result
+End
+
+'' Private - no description.
+Static Private Function CreateTask(fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Dim aStyleables As Styleable[] = New Styleable[1]
+  Dim x As TouringMachine = TouringMachine.Create("FX")
+  Dim y As TouringMachine = TouringMachine.Create("FY")
+  Dim w As TouringMachine = TouringMachine.Create("FW")
+  Dim h As TouringMachine = TouringMachine.Create("FH")
+  Dim r As TouringMachine = TouringMachine.Create("F10.0")
+
+  aStyleables[0] = New RoundedRect(x, y, w, h, r, r, Color.Black)
+
+  Dim result As ShapeStencil = New ShapeStencil(aStyleables, Task, fDefaultWidth, fDefaultHeight)
+  Return result
+End
+
+'' Private - no description.
+Static Private Function CreateExclusiveGateway(fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Dim coordinates As TouringMachine[] = New TouringMachine[8]
+
+  coordinates[0] = TouringMachine.Create("FX")
+  coordinates[1] = TouringMachine.Create("FY", "*", "F2.0", "+", "FH", "*", "0.5")
+  coordinates[2] = TouringMachine.Create("FX", "*", "F2.0", "+", "FW", "*", "0.5")
+  coordinates[3] = TouringMachine.Create("Y")
+  coordinates[4] = TouringMachine.Create("FX", "+", "W")
+  coordinates[5] = TouringMachine.Create("FY", "*", "F2.0", "+", "FH", "*", "0.5")
+  coordinates[6] = TouringMachine.Create("FX", "*", "F2.0", "+", "FW", "*", "0.5")
+  coordinates[7] = TouringMachine.Create("FY", "+", "H")
+
+  Dim aStyleables As Styleable[] = New Styleable[3]
+  aStyleables[0] = New Polygon(coordinates, Color.Black)
+
+  Dim x1 As TouringMachine = TouringMachine.Create("W", "*", "F0.33", "+", "FX") ' TouringMachine.Create("FX", "*", "F2.47", "+", "W", "*", "F0.404")
+  Dim y1 As TouringMachine = TouringMachine.Create("H", "*", "F0.33", "+", "FY") ' TouringMachine.Create("FY", "*", "F2.47", "+", "H", "*", "F0.395")
+  Dim x2 As TouringMachine = TouringMachine.Create("W", "*", "F0.66", "+", "FX")
+  Dim y2 As TouringMachine = TouringMachine.Create("H", "*", "F0.66", "+", "FY")
+
+  aStyleables[1] = New Strait(x1, y1, x2, y2, Color.Black, 3.0)
+  aStyleables[2] = New Strait(x1, y2, x2, y1, Color.Black, 3.0)
+
+  Dim result As ShapeStencil = New ShapeStencil(aStyleables, IntermediateEvent, fDefaultWidth, fDefaultHeight)
+  Return result
+End
+
+'' Private - no description.
+Static Private Function CreateIntermediateEvent(fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Dim aStyleables As Styleable[] = New Styleable[2]
+  Dim x As TouringMachine = TouringMachine.Create("W", "*", "F0.5", "+", "FX")
+  Dim y As TouringMachine = TouringMachine.Create("H", "*", "F0.5", "+", "FY")
+  Dim r1 As TouringMachine = TouringMachine.Create("FR")
+  Dim r2 As TouringMachine = TouringMachine.Create("FR", "*", "F0.85")
+
+  aStyleables[0] = New Circle(x, y, r1, Color.Black)
+  aStyleables[1] = New Circle(x, y, r2, Color.Black)
+
+  Dim result As ShapeStencil = New ShapeStencil(aStyleables, IntermediateEvent, fDefaultWidth, fDefaultHeight)
+  Return result
+End
+
+'' Private - no description.
+Static Private Function CreateEndEvent(fDefaultWidth As Float, fDefaultHeight As Float) As ShapeStencil
+  Dim aStyleables As Styleable[] = New Styleable[1]
+  Dim x As TouringMachine = TouringMachine.Create("FX", "*", "F2.0", "+", "W", "*", "F0.5")
+  Dim y As TouringMachine = TouringMachine.Create("FY", "*", "F2.0", "+", "H", "*", "F0.5")
+  Dim r As TouringMachine = TouringMachine.Create("FR")
+
+  aStyleables[0] = New Circle(x, y, r, Color.Black, 5)
+
+  Dim result As ShapeStencil = New ShapeStencil(aStyleables, EndEvent, fDefaultWidth, fDefaultHeight)
+  Return result
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' BEGIN Shape stencil provider functionality
+' ###############################################
+

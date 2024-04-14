@@ -1,0 +1,57 @@
+' Gambas class file
+
+''' This class represents the invisible part of a model as the base class for **Lane** and **FlowElement**.
+
+Export
+Inherits Element
+
+' ###############################################
+' BEGIN Base element functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Gets or sets the display name.
+Property Name As String
+
+' Store the display name.
+Private $sName As String
+
+
+'' Constructs a new base element.
+Public Sub _new()
+  $sName = ""
+End
+
+'' Destructs the (actual) base element.
+Public Sub _free()
+  ' Intentionally left blank.
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Name_Read() As String
+  Return $sName
+End
+
+'' Private - no description.
+Private Sub Name_Write(sName As String)
+  $sName = sName
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Base element functionality
+' ###############################################

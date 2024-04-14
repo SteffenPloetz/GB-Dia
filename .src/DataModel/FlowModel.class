@@ -1,0 +1,92 @@
+' Gambas class file
+
+''' This class holds the fow diagram and the flow process, the visible and the invisible part of a flow model.
+
+' ###############################################
+' BEGIN Flow model functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Get or set the flow diagram.
+Property Diagram As FlowDiagram
+
+'' Get the flow processes.
+Property Read Processes As FlowProcess[]
+
+'' Get or set the flag, determining whether the model has changed.
+Property Dirty As Boolean
+
+
+'' Private - no description.
+Private $oDiagram As FlowDiagram
+
+'' Private - no description.
+Private $aProcesses As FlowProcess[]
+
+Private $bDirty As Boolean = False
+
+'' Constructs a new flow model.
+Public Sub _new()
+  $oDiagram = New FlowDiagram
+  $aProcesses = New FlowProcess[]
+End
+
+'' Destructs the (actual) flow model.
+Public Sub _free()
+  $oDiagram = Null
+
+  $aProcesses.Clear() ' This also decreases the reference counter of the elements.
+  $aProcesses = Null
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function Diagram_Read() As FlowDiagram
+  Return $oDiagram
+End
+
+'' Private - no description.
+Private Sub Diagram_Write(oDiagram As FlowDiagram)
+  $oDiagram = oDiagram
+End
+
+'' Private - no description.
+Private Function Processes_Read() As FlowProcess[]
+  Return $aProcesses
+End
+
+'' Private - no description.
+Private Function Dirty_Read() As Boolean
+  Return $bDirty
+End
+
+'' Private - no description.
+Private Sub Dirty_Write(bDirty As Boolean)
+  $bDirty = bDirty
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Flow model functionality
+' ###############################################

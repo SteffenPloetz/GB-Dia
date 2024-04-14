@@ -1,0 +1,93 @@
+' Gambas class file
+
+''' This class provides a styleable circle. The behavior is similar to SVG circle.
+''' Style attributes are part of the base class **ESvgStyleable**.
+
+Inherits Styleable
+Export 
+
+' ###############################################
+' BEGIN Circle functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This property gets or sets the touring machine to calculate the center-point x-coordinate.
+Property CX As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the center-point y-coordinate.
+Property CY As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the radius.
+Property R As TouringMachine
+
+
+'' Private - no description.
+Private $fCX As TouringMachine
+
+'' Private - no description.
+Private $fCY As TouringMachine
+
+'' Private - no description.
+Private $fR As TouringMachine
+
+
+'' Constructs a new styleable circle. Base class **Styleable** is.
+''
+'' The **cxValue** defines the center-point x-coordinate.
+'' The **cyValue** defines the center-point y-coordinate.
+'' The **rValue** defines the radius.
+Public Sub _new(cxValue As TouringMachine, cyValue As TouringMachine, rValue As TouringMachine)
+  $fCX = cxValue
+  $fCY = cyValue
+  $fR = rValue
+End
+
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function CX_Read() As TouringMachine
+  Return $fCX
+End
+
+'' Private - no description.
+Private Sub CX_Write(cX As TouringMachine)
+  $fCX = cX
+End
+
+'' Private - no description.
+Private Function CY_Read() As TouringMachine
+  Return $fCY
+End
+
+'' Private - no description.
+Private Sub CY_Write(cY As TouringMachine)
+  $fCY = cY
+End
+
+'' Private - no description.
+Private Function R_Read() As TouringMachine
+  Return $fR
+End
+
+'' Private - no description.
+Private Sub R_Write(r As TouringMachine)
+  $fR = r
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Circle functionality
+' ###############################################

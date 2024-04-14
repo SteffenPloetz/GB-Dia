@@ -1,0 +1,66 @@
+' Gambas class file
+
+Inherits UndoRedoAction
+
+' ###############################################
+' BEGIN Set name action functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+Public OldBounds As RectF
+Public OldText As String
+Public NewBounds As RectF
+Public NewText As String
+Public ApplyTo As DiagramElement
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Method implementation
+' -----------------------------------------------
+
+'' This is to be overridden by any derived class.
+Public Sub Do()
+  If ApplyTo <> Null Then
+    If ApplyTo.IsShape Then
+      Dim oShape As FlowShape = ApplyTo
+
+      oShape.NameBounds = NewBounds
+      oShape.Name = NewText
+    Else
+      Dim oEdge As FlowEdge = ApplyTo
+
+      oEdge.NameBounds = NewBounds
+      oEdge.Name = NewText
+    Endif
+  Endif
+End
+
+'' This is to be overridden by any derived class.
+Public Sub Undo()
+  If ApplyTo <> Null Then
+    If ApplyTo.IsShape Then
+      Dim oShape As FlowShape = ApplyTo
+
+      oShape.NameBounds = OldBounds
+      oShape.Name = OldText
+    Else
+      Dim oEdge As FlowEdge = ApplyTo
+
+      oEdge.NameBounds = OldBounds
+      oEdge.Name = OldText
+    Endif
+  Endif
+End
+
+' -----------------------------------------------
+' END Method implementation
+' -----------------------------------------------
+' ###############################################
+' END Set name action functionality
+' ###############################################

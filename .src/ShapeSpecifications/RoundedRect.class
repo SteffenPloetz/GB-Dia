@@ -1,0 +1,146 @@
+' Gambas class file
+
+''' This class provides a styleable rectangle, hat can have rounded corners. The behavior is similar to SVG rectangle.
+''' Style attributes are part of the base class **ESvgStyleable**.
+
+Inherits Styleable
+Export
+
+' ###############################################
+' BEGIN Rounded rectangle functionality
+' ###############################################
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' This property gets or sets the touring machine to calculate the bounding box top left point x-coordinate.
+Property X As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the bounding box top left point y-coordinate.
+Property Y As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the bounding box width.
+Property Width As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the bounding box height.
+Property Height As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the corner radius in x-direction.
+Property RX As TouringMachine
+
+'' This property gets or sets the touring machine to calculate the corner radius in y-direction.
+Property RY As TouringMachine
+
+
+'' Private - no description.
+Private $fX As TouringMachine
+
+'' Private - no description.
+Private $fY As TouringMachine
+
+'' Private - no description.
+Private $fWidth As TouringMachine
+
+'' Private - no description.
+Private $fHeight As TouringMachine
+
+'' Private - no description.
+Private $fRX As TouringMachine
+
+'' Private - no description.
+Private $fRY As TouringMachine
+
+
+'' Constructs a new styleable (rounded) rectangle. Base class **Styleable** is.
+''
+'' The **xValue** defines the bounding box top left point x-coordinate.
+'' The **yValue** defines the bounding box top left point y-coordinate.
+'' The **widthValue** defines the bounding width.
+'' The **heightValue** defines the bounding height.
+'' The **rxValue** defines the corner radius in x-direction.
+'' The **ryValue** defines the corner radius in y-direction.
+Public Sub _new(xValue As TouringMachine, yValue As TouringMachine, widthValue As TouringMachine, heightValue As TouringMachine, rxValue As TouringMachine, ryValue As TouringMachine)
+  $fX = xValue
+  $fy = yValue
+  $fWidth = widthValue
+  $fHeight = heightValue
+  $fRX = rxValue
+  $fRY = ryValue
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
+
+' -----------------------------------------------
+' BEGIN Properties implementation
+' -----------------------------------------------
+
+'' Private - no description.
+Private Function X_Read() As TouringMachine
+  Return $fX
+End
+
+'' Private - no description.
+Private Sub X_Write(x As TouringMachine)
+  $fX = x
+End
+
+'' Private - no description.
+Private Function Y_Read() As TouringMachine
+  Return $fY
+End
+
+'' Private - no description.
+Private Sub Y_Write(y As TouringMachine)
+  $fY = y
+End
+
+'' Private - no description.
+Private Function Width_Read() As TouringMachine
+  Return $fWidth
+End
+
+'' Private - no description.
+Private Sub Width_Write(width As TouringMachine)
+  $fWidth = width
+End
+
+'' Private - no description.
+Private Function Height_Read() As TouringMachine
+  Return $fHeight
+End
+
+'' Private - no description.
+Private Sub Height_Write(height As TouringMachine)
+  $fHeight = height
+End
+
+'' Private - no description.
+Private Function RX_Read() As TouringMachine
+  Return $fRX
+End
+
+'' Private - no description.
+Private Sub RX_Write(rX As TouringMachine)
+  $fRX = rX
+End
+
+'' Private - no description.
+Private Function RY_Read() As TouringMachine
+  Return $fRY
+End
+
+'' Private - no description.
+Private Sub RY_Write(rY As TouringMachine)
+  $fRY = rY
+End
+
+' -----------------------------------------------
+' END Properties implementation
+' -----------------------------------------------
+
+' ###############################################
+' END Rounded rectangle  functionality
+' ###############################################

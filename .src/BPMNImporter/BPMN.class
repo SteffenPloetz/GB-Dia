@@ -1,0 +1,25 @@
+' Gambas class file
+
+''' This class provides constants, specific for BPMN.
+
+Create Private
+
+' ###############################################
+' BEGIN BPMN constants functionality
+' ###############################################
+
+Static Public ProcessNodeTypes As String[] = ["startEvent", "endEvent", "intermediateEvent", "task", "exclusiveGateway", "sequenceFlow"]
+
+Static Public ProcessEdgeTypes As String[] = ["sequenceFlow", "messageFlow"]
+
+Static Public ProcessNodeSubNodeTypes As String[] = ["incoming", "outgoing"]
+
+Static Public ProcessNodeAttributes As String[] = ["isForCompensation", "startQuantity", "completionQuantity"]
+
+Static Public DiagramNodeTypes As String[] = ["BPMNPlane"]
+
+Static Public PlaneNodeTypes As String[] = ["BPMNShape", "BPMNEdge"]
+
+' ###############################################
+' END BPMN constants functionality
+' ###############################################

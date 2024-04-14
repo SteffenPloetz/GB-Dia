@@ -1,0 +1,25 @@
+' Gambas class file
+
+''' This class represents the invisible part of a model for a **LabeledEdge**.
+''' In BPMN this is the class **SequenceFlow**.
+
+Export
+Inherits ModelElement
+
+' -----------------------------------------------
+' BEGIN Declarations, construction an destruction
+' -----------------------------------------------
+
+'' Constructs a new model sequence.
+Public Sub _new()
+  ' Intentionally left blank.
+End
+
+'' Destructs the (actual) model sequence.
+Public Sub _free()
+  ' Intentionally left blank.
+End
+
+' -----------------------------------------------
+' END Declarations, construction an destruction
+' -----------------------------------------------
